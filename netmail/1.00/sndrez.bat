@@ -1,0 +1,14 @@
+netmailbot ^
+-to ignored ^
+-from "<<from>>" ^
+-subject "Dollar Reservation Confirmation" ^
+-server smtp.bizmail.yahoo.com ^
+-authlogin egerez@eonsum.com -authpassword ege7334 ^
+-logfile "log.txt" ^
+-dsn "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=\netmail\;Extended properties=Text;" ^
+-dbquery "SELECT * FROM rezdata.txt" ^
+-dbemailcolumn "to" ^
+-dbreplacementids "<<name>>=name,<<to>>=to,<<from>>=from,<<resno>>=resno,<<cartype>>=cartype,<<dateout>>=dateout,<<datein>>=datein,<<rate>>=rate,<<surchg>>=surchg,<<surchg1>>=surchg1,<<taxtot>>=taxtot,<<estchg>>=estchg,<<filename>>=filename" ^
+-bodyfile "<<filename>>" ^
+-personalize ^
+-debug

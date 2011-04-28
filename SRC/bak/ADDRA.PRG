@@ -1,0 +1,4 @@
+*
+* output dollar RA file
+*
+* 

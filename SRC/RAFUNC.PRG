@@ -1,0 +1,3212 @@
+* ===========================================================================
+* this is the utility routine for racware.
+*
+* date: 05/01/91
+* author: KST
+*
+* revision
+* date: 08/11/94
+* edc: add phone book (F8)
+* edc: add reminder (F9)
+* edc: add calendar (F10)
+* 07.30.98
+* add f_y2k: convert date to year 2000 format
+* 09.98
+* add dispmsg: display system message (F6)
+* 10.26.98
+* f_edit: year 2000
+* ---------------------------------------------------
+* 12.22.09: move block_rate from rrvfm to rafunc
+* ===========================================================================
+* function f_popup ::= popup system message on line 24.
+* parameters xmessage ::= system message
+*            xrequest ::= if .t. ==> inkey() otherwise message stays on.
+* return numberic: inkey val. if xrequest is .t. else return 0
+*
+* function f_popback ::= clear the popup message
+* return none
+*
+* function f_confirm ::= display system prompt on line 24.
+* parameters xmessage ::= system prompt, e.g. [C]onfirm, [E]dit, [Q]uit
+*            xopt ::= valid option, e.g. CEQ
+* return string: option picked, e.g. C
+*
+* function f_shadow ::= draw shadow
+* parameters xr1 ::= upper left row
+*            xc1 ::= upper left col
+*            xr2 ::= lower right row
+*            xc2 ::= lower right col
+* return none
+*
+* function f_clrscn ::= clear screen to gbluecolor
+* parameters xtitle ::= title text
+* return none
+*
+* function f_getkey ::= inkey function, clear type ahead
+* return numeric: inkey () - ascii code
+*
+* function f_valid ::= for get fields, validate the given condition and
+*                      display appropiate messages.
+* parameters xcond ::= given condition
+*            xmess ::= message if condition is invalid
+* return boolean .t. or .f.
+*
+* function f_rd ::= read get fields
+* return numeric: lastkey () - ascii code
+*
+* function f_truncate ::= pad string with blanks to desired length
+* parameters xstr ::= incoming string
+*            xlen ::= desired length
+* return string: string
+*
+* function f_use
+* parameters xfile  ::= file name
+*            xorder ::= index order
+* return boolean: .t. if open successfully, .f. otherwise
+*
+* function f_verify ::= open file with input index order, seek key
+* parameters xfilnam ::= file to open
+*            xorder  ::= file index order
+*            xkey    ::= key value to be seeked
+* return boolean: .t. if key is found, .f. otherwise
+*
+* function f_locate ::= open file and location for key value
+* parameters xfilnam ::= file to open
+*            xkey    ::= field name to locate
+*            xval    ::= the key value to locate
+* return boolean: .t. if key is found, .f. otherwise
+*
+* function f_compute  ::= give xfld the value of xexpr
+* parameters xfld  ::= the mem variable to get the value
+*            xexpr ::= the expression value to assign to xfld
+* return boolean: .t.
+*
+* function f_parse ::= find leftmost substring delimited by delimiter "xdelim"
+* parameters xsstr   ::= source string
+*            xdstr   ::= string   (call by reference, e.g. @XSTR)
+*            xpos1   ::= starting position
+*            xdelim  ::= delimilator
+*            xmaxlen ::= max length of return string
+* return numeric: position of delimitor + 1
+*
+* eg. F_PARSE ("AX;37126532132132;09/92", @YSTR, 4, ";", 20)
+*     then YSTR = "37126532132132";
+*     return 19 
+*
+* function f_box ::= draw a box with shadow
+* parameters xr1 ::= upper left row
+*            xc1 ::= upper left col
+*            xr2 ::= lower right row
+*            xc2 ::= lower right col
+*            xtitle ::= title of box
+* return string: variable (save screen to variable)
+*
+* function f_restbox ::=  restore box 
+* parameters xscn ::= variable returned from f_box,
+* return none
+*
+* function f_expdate ::= compare xdate with today date
+* parameters xdate ::= date (for year > 2000)
+* return boolean: .t. if xdate >= today else .f.
+*
+* function f_expired ::= compare xdate with today date
+* parameters xdate ::= string:date
+* return boolean: .t. if xdate >= today else .f.
+*
+* function good_paytype ::= determine if paytype is valid
+* parameters xpaytype ::= pay type, e.g. AX, DB, CA ...
+*            xtype ::= pay code e.g. 1, 2, 3, called by reference
+* return boolean: .t. if valid else .f.
+*        string: xtype
+*
+* function f_yrdiff ::= difference between 2 dates by year.
+* parameters xdate1 ::= from date
+*            xdate2 ::= to date
+* return numeric: difference by year.
+*
+* function f_timeok ::= validate time format,
+* parameters xtime ::= time e.g. 23:44
+* return boolean .t. if valid else .f.
+*
+* function f_getrate ::= get appropiate rate.
+* parameters xcode ::= rate code
+*            xloc ::= location code
+*            xclass ::= rate class
+*            xdate ::= date
+* return boolean: .t. if rate can be located else .f.
+* position record pointer in rartm file.
+* 
+* function reclock ::= perform record locking
+* return boolean .t. if record can be locked.
+*
+* function filelock ::= perform file locking
+* 
+* function iszero ::= rounding check 
+* parameter xnum
+* return .t. if xnum < .001
+*
+* function notzero ::= rounding check
+* parameter xnum
+* return .t. if xnum > .001
+*
+* function f_clrrec ::= blank out record to be reused.
+* return none
+*
+* function f_clrskip ::= blank out record and perform specified function.
+* parameter xfunc ::= function to be performed.
+* return none
+*
+* function f_matchsec ::= check if there is any match between str1 & str2.
+* parameter xstr1, xstr2 ::= the 2 string to be compared.
+* return boolean .t. if there is any single character match.
+*
+* function f_pushmenu ::= racware menu system, go up one menu level.
+*                         display the menu for xptitle.  let user pick
+*                         one of the displayed option.
+*                         i. check whether station is forced logged out.
+*                         ii. check low disk space.
+* parameters xptitle ::= the menu title to be popped up.
+*
+* function f_drawmenu ::= a subroutine called by f_pushmenu only.
+*
+* function f_mess ::= a subroutine called by f_pushmenu only.
+*
+* function f_getscn ::= get screen from screen file and display screen.
+* parameters xfscn ::= name of screen to retrieve and display.
+*
+* function f_rstscn ::= restore previous saved screen.
+*
+* function f_screen ::= do SAY or GET for a screen.
+* parameters xtime ::= SAY or GET is done only if f_seq (fscreen.dbf) < xtime
+*            xfscn ::= name of screen.
+*
+* function f_pick_f ::= a popup window to let user pick from a dbf.
+* parameters xrow ::= row of left top corner of window.
+*            xcol ::= column of left top corner of window.
+*            xcolor ::= color of window.  blank -> default (gpickcolor).
+*            xtitle ::= title of window.
+*            xdispfld ::= fields to be displayed.
+*            xfunc ::= optional
+*                      procedure performed if entered is pressed.
+*                      "X" -> windows is display only.
+*            xkeyfld ::= optional
+*                        the index expression.
+*            xkeyval ::= optional
+*                        the value to match with xkeyfld.
+*                        if xkeyfld and xkeyval are passed as parameters,
+*                        only record with xkeyfld = xkeyval are displayed.
+*
+* function nextrec ::= get the next possible larger value.
+* parameter xval ::= the value to be process.
+* return string ::= the next possible larger value.
+*                   eg.  "12345004" -> "12345005"
+*                        "ABDK239K" -> "ABDK239L"
+*
+* function f_pick_a ::= a popup window let user pick an option from an array.
+* parameters xrow ::= row of left top corner of window.
+*            xcol ::= column of left top corner of window.
+*            xcolor ::= color of window.  blank -> default (gpickcolor).
+*            xtitle ::= title of window.
+*            xarray ::= the array that has all the options
+*            xopick ::= the initial highlighted pick.
+*
+* function f_edit ::= a function to replace browse database
+* parameters xdbfld ::= an array of field name to be browse
+*           xdbcol ::= an array of description of the fields
+*           xeditno ::= only the field with index in the arry larger than 
+*                       the number can be edit.  otherwise display only.
+*           xdelete ::= to tell whether the user can add or delete records.
+*           xdbvalid ::= the valid clause for each field.
+*           xdbpict ::= the picture field for each field.
+*
+* function f_edpick_f ::= a subroutine called by f_edit only
+*
+* function f_retrieve ::= a function to retieve the fields of a dbf to
+*                         to memory variable.   
+*                         eg. store FLOC to L_FLOC.
+*
+* function f_replace ::= to save the memory variable back to the dbf.
+*                        eg. replace FLOC with L_FLOC           
+*
+* function f_add ::= add a record to a database
+* parameters xscname ::= the screen it's using.
+*            xalias ::= the alias name of the database it's using.
+*            xfunc ::= optional.
+*                      the procedure to call before the new record is saved.
+*
+* function f_update ::= update or delete a record.
+* parameters xscname ::= the screen it's using.
+*            xalias ::= the alias name of the database it's using.
+*            xfunc1 ::= optional.
+*                       the procedure to call before right after the record
+*                       is retrieved.
+*            xfunc2 ::= optional.
+*                       the procedure to call before right before the record
+*                       is saved.
+*            xfunc3 ::= optional.
+*                       the procedure to call instead of just delete the 
+*                       record.
+*    
+* function f_getfld ::= to get a character field not using read.
+* parameters xfield ::= the variable name to read (passed by reference).
+*            xrow ::= row of left top corner of window.
+*            xcol ::= column of left top corner of window.
+*            xcolor ::= optional.
+*                       not used.
+*            xlen ::= optional.
+*                     length of the variable to read.
+*                     default to len of xfield.
+*            xformat ::= optional.
+*                        picture field.
+*                        default replicate ("X", xlen)
+*            xarrow ::= optional.
+*                       whether up or down arrow can save and exit.
+*                       default to .f..
+*            xhlp ::= optional.
+*                     the procedure to run if F1 key is pressed.
+*                     default to none.
+*
+* function f_getlgc ::= to get a logical field not using read.
+* parameters xrow ::= row of left top corner of window.
+*            xcol ::= column of left top corner of window.
+*            xfld ::= the logical variable (passed by reference)
+*
+* function f_getnum ::= to get a numeric field not using read.
+* parameters xfield ::= the variable name to read (passed by reference).
+*            xrow ::= row of left top corner of window.
+*            xcol ::= column of left top corner of window.
+*            xcolor ::= optional.
+*                       not used.
+*            xlen ::= optional.
+*                     length of the variable to read.
+*                     default to len of xfield.
+*            xformat ::= picture field.
+*            xarrow ::= optional.
+*                       whether up or down arrow can save and exit.
+*                       default to .f..
+*
+* function f_findblank ::= seek a blank record.  if none can be found,
+*                          append blank.
+*
+* function f_fupdate ::= write a temporary record for scheduled update
+*                        purpose.
+*
+* procedure calculator ::= on screen calculator by pressing F7.
+*
+* function f_calc2 ::= a subroutine called by calculator only.
+*
+* function f_getnum2 ::= a subroutine called by calculator only.
+*
+* function f_validres ::= to see whether a certain vehicle is available
+*                         from ydateout to ydatein.
+* parameter yunit ::= the vehicle number to check.
+*           ydateout ::= the date the vehicle supposed to be check out.
+*           ytimeout ::= the time the vehicle supposed to be check out.
+*           ydatein ::= the date the vehicle supposed to be back.
+*           ytimein ::= the time the vchicle supposed to be back.
+*           ykey ::= the key in ravres to skip.
+*                    the reservation number at open contract.
+*                    RA number at open contract maintanenance.
+*
+* function f_markvres ::= mark the reservation grid table with a temp status.
+*                         the key is the station id.
+* parameter yunit ::= the vehicle number.
+*           ydateout ::= the date the vehicle supposed to be check out.
+*           ytimeout ::= the time the vehicle supposed to be check out.
+*           ydatein ::= the date the vehicle supposed to be back.
+*           ytimein ::= the time the vchicle supposed to be back.
+*
+* function f_relvres ::= release the temp status record in resv. grid table.
+*
+* procedure f_resvgrid ::= display reservation grid table.
+*
+* procedure rsvgdisp ::= a subroutine called by f_resvgrid only.
+*
+* procedure rsvghlp ::= a subroutine called by f_resvgrid only.
+* 
+* ===========================================================================
+function f_popup
+
+parameters xmessage, xrequest
+private xrow, xhalf_len, xocolor, xkeyin, ycursor
+
+ycursor = iscursor ()
+set cursor off
+
+if pcount () < 2
+   xrequest = .f.
+endif
+
+if type ("gscrsav [40]") <> "L"
+   f_popback ()
+endif
+
+blimempak (-1)
+for xrow = 1 to 79
+   gscrsav [xrow] = savescreen (24, xrow, 24, xrow)
+next
+blimempak (-1)
+
+xmessage = alltrim (xmessage)
+if len (xmessage) > 76
+   xmessage = left (xmessage, 76)
+endif
+xhalf_len = round (len (xmessage) / 2, 0)
+
+xocolor = setcolor (gmesscolor)
+
+for xrow = 1 to xhalf_len + 2
+   @ 24, 40 - xrow clear to 24, 40 + xrow
+next
+
+@ 24, 41 - xhalf_len say xmessage
+setcolor (xocolor)
+
+xkeyin = 0
+if xrequest
+   set cursor on
+   xkeyin = f_getkey ()
+   f_popback ()
+endif
+if ycursor
+   set cursor on
+else
+   set cursor off
+endif
+return (xkeyin)
+
+
+******************************
+function f_popback
+
+if type ("GSCRSAV [40]") <> "L"
+   private xrow
+   blimempak (-1)
+   for xrow = 1 to 40
+      restscreen (24, xrow, 24, xrow, gscrsav [xrow])
+      restscreen (24, 80 - xrow, 24, 80 - xrow, gscrsav [80 - xrow])
+      gscrsav [xrow] = .f.
+      gscrsav [80 - xrow] = .f.
+   next
+   blimempak (-1)
+endif
+
+
+******************************
+function f_confirm
+
+parameters xmessage, xopt
+private xocolor, xpick, xkeyin, yscn, ycursor
+
+ycursor = iscursor ()
+
+blimempak (-1)
+yscn = savescreen (24, 00, 24, 79)
+xocolor = setcolor (gredcolor)
+
+@ 24, 00
+xkeyin = 0
+xpick = " "
+@ 24, 01 say trim (xmessage) + "........ [ ]"
+set cursor on
+@ 24, len (trim (xmessage)) + 10 say "["
+do while .t.
+   xkeyin = f_getkey ()
+   if xkeyin >= 32 .and. xkeyin <= 127
+      xpick = upper (chr (xkeyin))
+      @ 24, len (trim (xmessage)) + 11 say xpick
+      @ 24, len (trim (xmessage)) + 11 say ""
+      if xpick $ xopt
+         exit
+      endif
+      tone (500, 9)
+   endif
+enddo
+@ 24, 00
+setcolor (xocolor)
+blimempak (-1)
+restscreen (24, 00, 24, 79, yscn)
+blimempak (-1)
+if ycursor
+   set cursor on
+else
+   set cursor off
+endif
+return xpick
+
+
+******************************
+function f_shadow
+
+parameters xr1, xc1, xr2, xc2
+private ycolor
+
+if gmucolor
+   att (xr1 + 1, xc1 - 1, xr2 + 1, xc1 - 1, 8)
+   att (xr2 + 1, xc1, xr2 + 1, xc2 - 1, 8)
+else
+   ycolor = setcolor ("w/n")
+   @ xr1 + 1, xc1 - 1 clear to xr2 + 1, xc1 - 1
+   @ xr2 + 1, xc1 clear to xr2 + 1, xc2 - 1
+   setcolor (ycolor)
+endif
+
+
+******************************
+function f_clrscn
+
+parameters xtitle
+private yr1, yc1, yr2, yc2
+
+setcolor (gbluecolor)
+blimempak (-1)
+for n = 1 to 10
+   yr1 = 12 + round (-1.2 * n, 0)
+   yc1 = 40 + round (-4.0 * n, 0)
+   yr2 = 12 + round (1.2 * n, 0)
+   yc2 = 40 + round (3.9 * n, 0)
+   if type ("gboxsav [n]") = "L"
+      gboxsav [n] = savescreen (yr1, yc1, yr2, yc2)
+   endif
+   @ yr1, yc1 clear to yr2, yc2
+next
+blimempak (-1)
+setcolor (gredcolor)
+@ 00, 00
+@ 24, 00
+if pcount () >= 1
+   @ 00, 01 say substr (cdow(date()),1,3) + [ ] + dtoc (date())   && 01/05/98
+   @ 00, 40 - int (len (xtitle) / 2) say xtitle
+endif
+
+setcolor (gbluecolor)
+
+
+******************************
+function f_getkey
+
+clear typeahead
+return inkey (0)
+
+
+******************************
+function f_valid
+
+parameters xcond, xmess
+
+if xcond
+   return .t.
+else
+   tone (500, 9)
+   if pcount () < 2
+      f_popup ("Invalid Entry!!! Press Any Key...", .t.)
+   else
+      f_popup (trim (xmess) + " Press Any Key...", .t.)
+   endif
+   set cursor on
+   return .f.
+endif
+
+
+******************************
+function f_rd
+
+set cursor on
+read
+set cursor off
+return lastkey ()
+
+
+******************************
+function f_truncate
+
+parameters xstr, xlen
+
+return left (xstr + replicate (" ", xlen), xlen)
+
+
+******************************
+function f_use
+
+parameters xfile, xorder
+private xfilestr, xslct, xpath
+
+if pcount () < 2
+   xorder = 0
+endif
+xfile = upper (alltrim (xfile))
+
+xfilestr = "_G" + xfile
+if .not. f_valid (type (xfilestr) = "C", "Error: Unknown File: " + xfile)
+   return .f.
+endif
+
+xslct = left (&xfilestr, 2)
+select &xslct
+
+if .not. used () .or.  upper (alias ()) <> xfile
+
+   xpath = substr (&xfilestr, 3, 1)
+   do case
+   case xpath = "D"
+      xpath = gdbfpath
+   case xpath = "S"
+      xpath = gstnpath
+   otherwise
+      xpath = ""
+   endcase
+
+   store "" to xndx1, xndx2, xndx3, xndx4, xndx5, xndx6, xndx7, xndx8, xndx9
+   xndx = substr (&xfilestr, 4)
+   xndxcnt = 0
+   do while .not. empty (xndx) .and. xndxcnt < 9
+      xndxcnt = xndxcnt + 1
+      xndxstr = "xndx" + str (xndxcnt, 1)
+      &xndxstr = xpath + alltrim (left (xndx, 8))
+      xndx = substr (xndx, 9)
+   enddo
+
+   do while .t.
+      if xndxcnt = 0
+         use (xpath + xfile) alias &xfile
+      else
+         use (xpath + xfile) index &xndx1, &xndx2, &xndx3, &xndx4, &xndx5, ;
+            &xndx6, &xndx7, &xndx8, &xndx9 alias &xfile
+      endif
+      if neterr ()
+         f_popup (xfile + " is busy, please wait ...")
+         inkey (2)
+         f_popback ()
+         loop
+      else 
+         exit
+      endif
+   enddo
+endif
+
+if xorder > 0
+   set order to xorder
+endif
+
+*
+*demo version
+*
+*if upper(xfile) $ "RAAGRH"  .and. reccount() > 200
+*  tone (500, 9)
+*  f_popup ("Record exceeds Demo limits...",.t.)
+*  quit
+*endif
+*
+
+return .t.
+
+
+******************************
+function f_verify
+
+parameters xfilnam, xorder, xkey
+private ysel, yret
+
+ysel = select ()
+f_use (xfilnam, xorder)
+
+seek xkey
+yret = found ()
+select (ysel)
+return yret
+
+
+******************************
+function f_locate
+
+parameters xfilnam, xkey, xval
+private ysel, yret
+
+ysel = select ()
+f_use (xfilnam)
+go top
+locate for &xkey = xval
+yret = found ()
+select (ysel)
+return yret
+
+
+******************************
+function f_compute
+
+parameters xfld, xexpr
+
+xfld = xexpr
+return .t.
+
+
+******************************
+function f_parse
+
+parameters xsstr, xdstr, xpos1, xdelim, xmaxlen
+private yretpos, ypos2
+
+xdstr = substr (xsstr, xpos1)
+ypos2 = at (chr (xdelim), xdstr)
+if ypos2 = 0
+   yretpos = len (xsstr) + 1
+   xdstr = left (xdstr, min (len (xsstr), xmaxlen))
+else
+   yretpos = ypos2 + xpos1
+   ypos2 = ypos2 - 1
+   xdstr = left (xdstr, min (xmaxlen, ypos2))
+endif
+return yretpos
+
+
+******************************
+function f_box
+
+parameters xr1, xc1, xr2, xc2, xtitle
+private crow, ccol, yr1, yc1, yr2, yc2, ylen
+if pcount () < 5
+   xtitle = ""
+   ylen = 0
+else
+   xtitle = " " + alltrim (xtitle) + " "
+   ylen = len (xtitle)
+endif
+private yscn
+blimempak (-1)
+yscn = savescreen (xr1, xc1 - 1, xr2 + 1, xc2)
+
+crow = int ((xr1 + xr2) / 2)
+ccol = int ((xc1 + xc2) / 2)
+
+for n = 1 to 10
+   yr1 = crow + round ((xr1 - crow) * n / 10.0, 0)
+   yc1 = ccol + round ((xc1 - ccol) * n / 10.0, 0)
+   yr2 = crow + round ((xr2 - crow) * n / 10.0, 0)
+   yc2 = ccol + round ((xc2 - ccol) * n / 10.0, 0)
+   @ yr1, yc1 clear to yr2, yc2
+   @ yr1, yc1 to yr2, yc2
+next
+if .not. empty (xtitle)
+   @ xr1, xc1 + int ((xc2 - xc1 + 1 - ylen) / 2) say xtitle
+endif
+f_shadow (xr1, xc1, xr2, xc2)
+return str (xr1, 2) + str (xc1 - 1, 2) + str (xr2 + 1, 2) + str (xc2, 2) ;
+   + yscn
+
+
+******************************
+function f_restbox
+
+blimempak (-1)
+parameters xscn
+restscreen (val (substr (xscn, 1, 2)),val (substr (xscn, 3, 2)), ;
+   val (substr (xscn, 5, 2)), val (substr (xscn, 7, 2)), substr (xscn, 9))
+blimempak (-1)
+
+******************************
+function f_expdate
+
+parameters xdate
+private ydate, y1
+
+if year (xdate) > 1920 .or. len(dtoc(xdate)) = 10  && 05/30/95: for year > 2000
+   return xdate >= date ()
+else
+   ydate = dtoc(xdate)
+   y1 = ctod(substr(ydate,1,6)+"20"+substr(ydate,7,2))
+   return y1 >= date ()
+endif
+
+******************************
+function f_expired
+
+parameters xdate
+private ydate, ytoday
+
+if right (xdate,2) > '20'   && 05/30/95: for year > 2000
+   ydate = ctod (left (xdate, 2) + "/01/19" + right (xdate, 2))
+else
+   ydate = ctod (left (xdate, 2) + "/01/20" + right (xdate, 2))
+endif
+
+ytoday = ctod (stuff (dtoc (date ()), 4, 2, "01"))
+return ydate >= ytoday
+
+******************************
+function good_paytype
+
+parameters xpaytype, xtype
+private ysel, yok
+
+ysel = select ()
+f_use ("RAPAYTYP")
+locate for fpaycode = xpaytype
+if .not. eof ()
+   xtype = ftype
+   yok = .t.
+else
+   xtype = 0
+   yok = .f.
+endif
+use
+select (ysel)
+return yok
+
+
+******************************
+function f_yrdiff
+* year 2000
+parameters xdate1, xdate2
+private y1, y2, yyear
+y1 = year (xdate1)
+* y1 = if(y1 < 1920, y1 + 100, y1)
+y2 = year (xdate2)
+* y2 = if(y2 < 1920, y2 + 100, y2)
+yyear = y2 - y1
+if month (xdate1) < month (xdate2)
+   return yyear
+elseif month (xdate1) > month (xdate2)
+   return yyear - 1
+elseif day (xdate1) > day (xdate2)
+   return yyear - 1
+else
+   return yyear
+endif
+
+
+******************************
+function f_timeok
+
+parameters xtime
+if val (left (xtime, 2)) > 23 .or. val (left (xtime, 2)) < 0
+   return .f.
+elseif val (substr (xtime, 4, 2)) > 59 .or. val (substr (xtime, 4, 2)) < 0
+   return .f.
+else
+   xtime = strtran (xtime, " ", "0")
+   return .t.
+endif
+
+
+******************************
+function f_getrate
+
+parameters xcode, xloc, xclass, xdate
+private yfnd
+
+f_use ("rartm",1)
+seek xcode + xloc + xclass
+yfnd = .f.
+do while fcode + floc + fclass = xcode + xloc + xclass
+   if (empty (fdatefrom) .and. empty (fdateto)) .or. ;
+         (empty (fdatefrom) .and. fdateto >= xdate) .or. ;
+         (empty (fdateto) .and. fdatefrom <= xdate) .or. ;
+         (fdateto >= xdate .and. fdatefrom <= xdate)
+      yfnd = .t.
+      exit
+   endif
+   skip
+enddo
+if .not. yfnd
+   seek xcode + space (10) + xclass
+   do while xcode + space (10) + xclass = fcode + floc + fclass
+      if (empty (fdatefrom) .and. empty (fdateto)) .or. ;
+            (empty (fdatefrom) .and. fdateto >= xdate) .or. ;
+            (empty (fdateto) .and. fdatefrom <= xdate) .or. ;
+            (fdateto >= xdate .and. fdatefrom <= xdate)
+         yfnd = .t.
+         exit
+      endif
+      skip
+   enddo
+endif
+return yfnd
+
+
+******************************
+function reclock
+
+private ycount, yerr
+
+if empty (alias ())
+   return (0)
+endif
+ycount = 30
+yerr = .f.
+do while .not. rlock ()
+   yerr = .t.
+   ycount = ycount - 1
+   if ycount = 0
+      f_popup ("Unable to lock " + alias () + " database... Working...", .f.)
+      ycount = 30
+   endif
+
+   f_popup ("Trying to lock " + alias () + " record...", .f.)
+   inkey (.5)
+enddo
+if yerr
+   f_popback ()
+endif
+return (0)
+
+
+******************************
+function filelock
+
+private ycount, yerr
+
+if empty (alias ())
+   return (0)
+endif
+ycount = 30
+yerr = .f.
+do while .not. flock ()
+   yerr = .t.
+   ycount = ycount-1
+
+   if ycount = 0
+      f_popup ("Unable to lock " + alias () + " database... Working...", .f.)
+      ycount = 30
+   endif
+
+   f_popup ("Trying to lock " + alias () + " database...", .f.)
+   inkey (.5)
+enddo
+if yerr
+   f_popback ()
+endif
+return (0)
+
+
+******************************
+function iszero
+
+parameter xnum
+
+return abs (xnum) < 0.001
+
+
+******************************
+function notzero
+
+parameter xnum
+
+return abs (xnum) > 0.001
+
+
+******************************
+function f_clrrec
+
+private xfld, xlfld, n
+f_fupdate ("D")
+reclock ()
+for n = 1 to fcount ()
+   xfld = field (n)
+   if type (xfld) = "D"
+      replace &xfld with ctod ("  /  /  ")
+   elseif type (xfld) = "N"
+      replace &xfld with 0
+   elseif type (xfld) = "C"
+      replace &xfld with " "
+   elseif type (xfld) = "L"
+      replace &xfld with .f.
+   endif
+next
+commit
+unlock
+
+******************************
+function f_clrskip
+
+parameter xfunc
+
+private yrec1, yrec2
+yrec1 = recno ()
+skip 1
+if eof ()
+   yrec2 = 0
+else
+   yrec2 = recno ()
+endif
+go (yrec1)
+if pcount () < 1
+   f_clrrec ()
+else
+   do &xfunc
+endif
+if yrec2 > 0
+   go (yrec2)
+endif
+return (yrec2)
+
+
+******************************
+* 02.06.07: delete & skip
+function f_delskip
+
+parameter xfunc
+
+private yrec1, yrec2
+yrec1 = recno ()
+skip 1
+if eof ()
+   yrec2 = 0
+else
+   yrec2 = recno ()
+endif
+go (yrec1)
+if pcount () < 1
+   reclock ()
+   delete
+   commit
+   unlock
+else
+   do &xfunc
+endif
+if yrec2 > 0
+   go (yrec2)
+endif
+return (yrec2)
+
+******************************
+function f_matchsec
+
+parameter xstr1, xstr2
+private n, ystr
+for n = 0 to 9
+   ystr = str (n, 1)
+   if ystr $ xstr1 .and. ystr $ xstr2
+      return .t.
+   endif
+next
+return .f.
+
+
+******************************
+function f_pushmenu
+
+f_popback ()
+parameters xptitle
+private xsel, xftitle, xcnt, xpick, xopick, xs_row, xs_col, xkey
+private xafoptdesc [9], ymuquit, ysecurity [9], ysec
+
+f_rstscn ()
+* -- 12.08.09
+*set key -5 to dispmsg
+*set key -6 to calculator
+*set key -7 to phonedir
+*set key -8 to reminder
+*set key -9 to calendar
+* --
+
+set key 28 to
+set key -1 to
+set key -2 to
+   
+f_use ("rconsole")
+go gusrline
+if fuser <> gusrid .or. fstatus = "IDLE"  .or. fstatus = "DISABLE"
+   f_valid (.f., "Force Logout by the System!")
+   close all
+   break
+else
+   select rconsole
+   reclock ()
+   replace fmodule with xptitle
+   commit
+   unlock
+   use
+endif
+
+set cursor off
+xsel = select ()
+xftitle = f_truncate (xptitle, 22)
+f_use ("LITEBAR")
+seek xftitle
+
+if found ()
+   ymuquit = (flevel <= gmenulevel)
+   gmenulevel = flevel
+   if ymuquit .or. gmenulevel = 1
+      restore screen from gmenuscn [gmenulevel]
+   else
+      restore screen from gmenuscn [gmenulevel - 1]
+      if gmenulevel = 4
+         setcolor (gmenuback)
+         @ 03, 49 clear to 17, 79
+      endif
+   endif
+   setcolor ("w+"+gmenuback)
+   @ 01, 00 
+   if empty (glocname)
+      @ 01, 22 say " RAC Car Rental Management System "
+   else
+      @ 01, 39 - round (len (glocname) / 2, 0) say " " + glocname + " "
+   endif
+   @ 01, 74 say "<"+gusrid+">"
+   xcnt = 0
+   gopts = ""
+   do while ftitle = xftitle .and. xcnt <= 9
+      xcnt = xcnt + 1
+      goption [xcnt] = foption
+      ysecurity [xcnt] = alltrim (fsecurity)
+      gopts = gopts + left (goption [xcnt], 1)
+      xafoptdesc [xcnt] = foptdesc
+      skip
+   enddo
+   if xcnt = 0
+      gmenupk [gmenulevel] = 0
+      gmenulevel = gmenulevel - 1
+      if gmenulevel = 0
+         setcolor (gmenuback)
+         @ 2, 0 clear to 22, 79
+         f_mess (.f.)
+         bliovlclr ()
+         blimempak (-1)
+         save screen to gmenuscn [1]
+      endif
+      use
+      select (xsel)
+      return 0
+   endif
+else
+   f_popup ("Error: Menu File Not Found!!! Press Any Key to Continue...", .t.)
+   use
+   select (xsel)
+   return -1
+endif
+
+xpick = if (gmenupk [gmenulevel] = 0, 1, gmenupk [gmenulevel])
+
+xopick = xpick
+xs_row = gmenulevel + 2 + 2
+xs_col = (gmenulevel - 1) * 8 + 3
+
+if .not. ymuquit
+   f_drawmenu (xftitle, gmenulevel, xs_row - 2, xs_col - 1, .f.)
+endif
+
+do while .t.
+   setcolor (gmcol2 [gmenulevel])
+   @ xs_row + xpick, xs_col say " " + goption [xpick] + " "
+   if gmenulevel < 4
+      f_drawmenu (goption [xpick], gmenulevel + 1, 3, 50, .t.)
+   endif
+   f_mess (.t., alltrim (xafoptdesc [xpick]), gmcol1 [gmenulevel])
+
+   do while .t.
+      xkey = inkey (glgouttme * 60)
+      if xkey = 0
+         close all
+         break
+      endif
+      * -- 12.08.09
+      * if xkey = -4
+      *    do rrndr
+      *   set cursor off
+      *   loop
+      * endif
+      * --
+      if xkey = -5
+         do dispmsg
+         loop
+      endif
+      if xkey = -6
+         do calculator
+         loop
+      endif
+      if xkey = -7
+         do phonedir
+         loop
+      endif
+      if xkey = -8
+         do reminder
+         loop
+      endif
+      if xkey = -9
+         do calendar
+         loop
+      endif
+      if xkey = 27 .or. xkey = 13 .or. xkey = 5 .or. xkey = 24 ;
+            .or. xkey = 4 .or. xkey = 19 .or. chr (xkey) $ gopts
+         exit
+      endif
+   enddo
+
+   f_mess (.f.)
+
+   do case
+   case xkey = 27 .or. xkey = 19
+      gmenupk [gmenulevel] = 0
+      gmenulevel = gmenulevel - 1
+      if gmenulevel = 0
+         setcolor (gmenuback)
+         @ 2, 0 clear to 22, 79
+         f_mess (.f.)
+         blimempak (-1)
+         save screen to gmenuscn [1]
+      endif
+      use
+      select (xsel)
+      return 0
+   case chr (xkey) $ gopts  .or. xkey = 13 .or. xkey = 4
+      if chr (xkey) $ gopts
+         if chr (xkey) <> substr (gopts, xpick, 1)
+            xopick = xpick
+            xpick = at (chr (xkey), gopts)
+            setcolor (gmcol1 [gmenulevel])
+            @ xs_row + xopick, xs_col say " " + goption [xopick] + " "
+            setcolor (gmcol2 [gmenulevel])
+            @ xs_row + xpick, xs_col say " " + goption [xpick] + " "
+            if gmenulevel < 4
+               setcolor (gmenuback)
+               @ 03, 49 clear to 17, 79
+            endif
+         endif
+      endif
+      if f_matchsec (gusrgp, ysecurity [xpick])
+         gmenupk [gmenulevel] = xpick
+         if gmenulevel < 4
+            gmenupk [gmenulevel + 1] = 0
+         endif
+         blimempak (-1)
+         save screen to gmenuscn [gmenulevel]
+         use
+         f_use ("rconsole")
+         go gusrline
+         reclock ()
+         replace fmodule with substr (goption [xpick], 4)
+         commit
+         unlock
+         use
+         select (xsel)
+         blimempak (-1)
+         return xpick
+      else
+         if gmenulevel < 4
+            f_drawmenu (goption [xpick], gmenulevel + 1, 3, 50, .t.)
+         endif
+         f_valid (.f., "Insufficient Right !")
+      endif
+   case xkey = 5
+      xopick = xpick
+      xpick = if (xpick > 1, xpick - 1, xcnt)
+   case xkey = 24
+      xopick = xpick
+      xpick = if (xpick < xcnt, xpick + 1, 1)
+   endcase
+
+   setcolor (gmcol1 [gmenulevel])
+   @ xs_row + xopick, xs_col say " " + goption [xopick] + " "
+enddo
+
+
+******************************
+function f_drawmenu
+
+parameters xtitle, xlevel, xrow, xcol, xclear
+private xasftitle [9], ycnt, x_r
+
+xtitle = right (xtitle, 22)
+if .not. xclear
+   ycnt = xcnt
+else
+   ycnt = 0
+   seek xtitle
+   do while ftitle = xtitle
+      ycnt = ycnt + 1
+      xasftitle [ycnt] = foption
+      skip
+   enddo
+endif
+
+if ycnt > 0
+   setcolor (gmcol1 [xlevel])
+   if .not. gmucolor
+      @ xrow, xcol to xrow + ycnt + 3, xcol + 28
+   else
+      @ xrow, xcol, xrow + ycnt + 3, xcol + 28 box space (8)
+   endif
+   @ xrow + 1, xcol + 1 say "    " + upper (xtitle) + " "
+   @ xrow + 2, xcol + 1 say replicate (chr (196), 27)
+
+   for x_r = 1 to ycnt
+      @ x_r + xrow + 2, xcol + 1 say " " + ;
+         if (xclear, xasftitle [x_r], goption [x_r]) + " "
+   next
+   if xclear
+      setcolor (gmenuback)
+      @ xrow + ycnt + 4, xcol - 1 clear to 17, 79
+   endif
+   f_shadow (xrow, xcol, xrow + ycnt + 3, xcol + 28)
+elseif xclear
+   setcolor (gmenuback)
+   @ 03, 49 clear to 17, 79
+endif
+
+
+******************************
+function f_mess
+
+parameters xshow, xmessage, xcolor
+private xhalf_len, xocolor
+
+if xshow
+   blimempak (-1)
+   gscrsav [81] = savescreen (24, 00, 24, 79)
+   xhalf_len = round (len (xmessage) / 2, 0)
+   xocolor = setcolor (xcolor)
+
+   @ 24, 40 - xhalf_len - 2 clear to 24, 40 + xhalf_len + 2
+   @ 24, 41 - xhalf_len say xmessage
+   setcolor (xocolor)
+else
+   blimempak (-1)
+   restscreen (24, 00, 24, 79, gscrsav [81])
+   gscrsav [81] = .f.
+   blimempak (-1)
+endif
+
+
+******************************
+function f_getscn
+
+parameters xfscn
+private yscn, yr1, yc1, yr2, yc2, ysel
+
+ysel = select ()
+f_use ("RASCB", 1)
+seek upper (f_truncate (xfscn, 8))
+if .not. f_valid (found (), "Screen File Not Found!")
+   use
+   select (ysel)
+   return .f.
+endif
+setcolor (gbluecolor)
+blimempak (-1)
+for n = 1 to 10
+   yr1 = 12 + round (-1.2 * n, 0)
+   yc1 = 40 + round (-4.0 * n, 0)
+   yr2 = 12 + round (1.2 * n, 0)
+   yc2 = 40 + round (3.9 * n, 0)
+   if type ("gboxsav [n]") = "L"
+      gboxsav [n] = savescreen (yr1, yc1, yr2, yc2)
+   endif
+   @ yr1, yc1 clear to yr2, yc2
+next
+blimempak (-1)
+restore screen from fscn
+use
+select (ysel)
+newcolor (01, 00, 23, 79, gbluecolor)
+newcolor (00, 00, 00, 79, gredcolor)
+newcolor (24, 00, 24, 79, gredcolor)
+setcolor (gbluecolor)
+return .t.
+
+
+******************************
+function f_rstscn
+
+private yr1, yc1, yr2, yc2
+
+if type ("gboxsav [1]") <> "L"
+   for n = 10 to 1 step -1
+      yr1 = 12 + round (-1.2 * n, 0)
+      yc1 = 40 + round (-4.0 * n, 0)
+      yr2 = 12 + round (1.2 * n, 0)
+      yc2 = 40 + round (3.9 * n, 0)
+      blimempak (-1)
+      restscreen (yr1, yc1, yr2, yc2, gboxsav [n])
+      gboxsav [n] = .f.
+      blimempak (-1)
+   next
+endif
+
+
+******************************
+function f_screen
+
+parameters xtime, xfscn
+private yrow1, yrow2, ycol1, ycol2, ystrm, ycolor, ytitle
+private yscm, ysay, ypict, yvalid, yget, ysel
+private yscn
+
+if xtime = 0
+   if .not. f_getscn (xfscn)
+      return .f.
+   endif
+endif
+
+yscm = upper (left (xfscn + space (10), 10))
+ysel = select ()
+select 0
+f_use ("FSCREEN")
+seek yscm
+setcolor (gbluecolor)
+set cursor on
+if .not. found ()
+   f_popup ("Screen Setup Not Found!!! Press Any Key to Continue...", .t.)
+else
+   do while f_scn = yscm
+      if f_seq < xtime .or. .not. f_matchsec (gusrgp, alltrim (fsecurity))
+         skip
+         loop
+      elseif .not. empty (f_say)
+         ysay = f_say
+         ypict = if (empty (f_pict), "[]", f_pict)
+         @ f_row, f_col say &ysay picture &ypict
+      elseif empty (f_say)
+         yvalid = if (empty (f_valid), ".t.", f_valid)
+         yget = f_get
+         ypict = if (empty (f_pict), "[]", f_pict)
+         @ f_row, f_col get &yget picture &ypict valid &yvalid
+      endif
+      skip
+   enddo
+endif
+use
+select (ysel)
+
+
+******************************
+function f_pick_f
+
+parameters xrow, xcol, xcolor, xtitle, xdispfld, xfunc, xkeyfld, xkeyval
+private ycolor, yscn, ylen, yrow, ycrow, ykeyin, yrecno, ycnt
+private yrectop, yrecbott, ycond, ydisponly, ynotitle
+
+ydisponly = .f.
+if pcount () < 6
+   xfunc = ""
+elseif left (xfunc, 1) = "X"
+   if xfunc == "X"
+      xfunc = ""
+   endif
+   ydisponly = .t.
+endif
+set cursor off
+yrecno = recno ()
+if pcount () < 8
+   ycond = ".T."
+   go top
+   yrectop = recno ()
+   go bottom
+   yrecbott = recno ()
+else
+   ycond = xkeyfld + " = " + xkeyval
+   seek &xkeyval
+   if eof ()
+      return .f.
+   endif
+   yrectop = recno ()
+
+   set softseek on
+   seek nextrec (&xkeyval)
+   if eof ()
+      go bottom
+   else
+      skip -1
+   endif
+   yrecbott = recno ()
+   set softseek off
+endif
+
+yrow = xrow + reccount () + 1
+if yrow > 22
+   yrow = 22
+endif
+
+if ydisponly
+   ylen = len (&xdispfld)
+else
+   ylen = len (&xdispfld) + 3
+endif
+ycnt = 1
+do while .t.
+   skip
+   if eof () .or. .not. &ycond
+      exit
+   elseif ycnt < (yrow - xrow - 1)
+      ycnt = ycnt + 1
+   else
+      exit
+   endif
+enddo
+
+go (yrecno)
+if ycnt < (yrow - xrow - 1)
+   skip (ycnt - yrow + xrow + 1)
+   if bof () .or. .not. &ycond
+      go yrectop
+   endif
+endif
+
+if empty (xcolor)
+   xcolor = gpickback
+endif
+ycolor = setcolor (xcolor)
+
+blimempak (-1)
+if (xcol + ylen + 1) > 78
+   xcol = 77 - ylen
+endif
+if xtitle = "NOTITLE"
+   yscn = savescreen (xrow + 1, xcol - 1, yrow + 1, xcol + ylen + 1)
+else
+   yscn = savescreen (xrow, xcol - 1, yrow + 1, xcol + ylen + 1)
+   @ xrow, xcol say chr (218) + replicate (chr (196), ylen) + chr (191)
+   if ydisponly
+      @ xrow, xcol + 1 say xtitle
+   else
+      @ xrow, xcol + 4 say xtitle
+   endif
+endif
+ycrow = xrow + 1
+ycnt = 99
+do while ycrow < yrow .and. .not. eof () .and. &ycond
+   if yrecno = recno ()
+      ycnt = ycrow
+   endif
+   if ydisponly
+      @ ycrow, xcol say chr (179) + f_truncate (&xdispfld, ylen) + chr (179)
+   else
+      @ ycrow, xcol say chr (179) + f_truncate (chr (65 + ycrow - xrow - 1) + ;
+         ". " + &xdispfld, ylen) + chr (179)
+   endif
+   skip
+   ycrow = ycrow + 1
+enddo
+if ycnt = 99
+   ycnt = ycrow - 1
+endif
+yrow = ycrow
+@ yrow, xcol say chr (192) + replicate (chr (196), ylen) + chr (217)
+f_shadow (xrow, xcol, yrow, xcol + ylen + 1)
+if yrow = xrow + 1
+   setcolor (ycolor)
+   blimempak (-1)
+   if xtitle = "NOTITLE"
+      restscreen (xrow + 1, xcol - 1, yrow + 1, xcol + ylen + 1, yscn)
+   else
+      restscreen (xrow, xcol - 1, yrow + 1, xcol + ylen + 1, yscn)
+   endif
+   blimempak (-1)
+   set cursor on
+   return .f.
+endif
+
+go (yrecno)
+ycrow = ycnt
+do while .t.
+   setcolor (gpickfore)
+   if ydisponly
+      @ ycrow, xcol + 1 say f_truncate (&xdispfld, ylen)
+   else
+      @ ycrow, xcol + 1 say f_truncate (chr (65 + ycrow - xrow - 1) + ;
+         ". " + &xdispfld, ylen)
+   endif
+   do while .t.
+      ykeyin = inkey (0)
+      if ykeyin >= 97 .and. ykeyin <= 122 .and. .not. ydisponly
+         ykeyin = ykeyin - 32
+      endif
+      if (str (ykeyin, 2) + ";") $ " 4; 5;24;27;19;18; 3;" + ;
+            if (ydisponly .and. empty (xfunc), "", "13;")
+         exit
+      endif
+      if ykeyin >= 65 .and. ykeyin <= (63 + yrow - xrow) .and. .not. ydisponly
+         exit
+      endif
+   enddo
+
+   if ykeyin <> 13
+      setcolor (xcolor)
+      if ydisponly
+         @ ycrow, xcol + 1 say f_truncate (&xdispfld, ylen)
+      else
+         @ ycrow, xcol + 1 say f_truncate (chr (65 + ycrow - xrow - 1) + ;
+            ". " + &xdispfld, ylen)
+      endif
+   endif
+   do case
+   case ykeyin = 5
+      skip -1
+      if bof () .or. .not. &ycond
+         go yrectop
+      else
+         if ycrow > xrow + 1
+            ycrow = ycrow - 1
+         else
+            if ydisponly
+               scroll (xrow + 1, xcol + 1, yrow - 1, xcol + ylen, -1)
+            else
+               scroll (xrow + 1, xcol + 4, yrow - 1, xcol + ylen, -1)
+            endif
+         endif
+      endif
+   case ykeyin = 24
+      skip 1
+      if eof () .or. .not. &ycond
+         go yrecbott
+      else
+         if ycrow < yrow - 1
+            ycrow = ycrow + 1
+         else
+            if ydisponly
+               scroll (xrow + 1, xcol + 1, yrow - 1, xcol + ylen, 1)
+            else
+               scroll (xrow + 1, xcol + 4, yrow - 1, xcol + ylen, 1)
+            endif
+         endif
+      endif
+   case ykeyin = 18
+      ycnt = 1
+      do while ycnt <= (yrow - xrow - 2)
+         skip -1
+         if bof () .or. .not. &ycond
+            go yrectop
+            exit
+         endif
+         if ycrow > xrow + 1
+            ycrow = ycrow - 1
+         else
+            if ydisponly
+               scroll (xrow + 1, xcol + 1, yrow - 1, xcol + ylen, -1)
+               @ ycrow, xcol + 1 say f_truncate (&xdispfld, ylen)
+            else
+               scroll (xrow + 1, xcol + 4, yrow - 1, xcol + ylen, -1)
+               @ ycrow, xcol + 1 say f_truncate (chr (65 + ycrow - xrow - 1) + ;
+                  ". " + &xdispfld, ylen)
+            endif
+         endif
+         ycnt = ycnt + 1
+      enddo
+   case ykeyin = 3
+      ycnt = 1
+      do while ycnt <= (yrow - xrow - 2)
+         skip 1
+         if eof () .or. .not. &ycond
+            go yrecbott
+            exit
+         endif
+         if ycrow < yrow - 1
+            ycrow = ycrow + 1
+         else
+            if ydisponly
+               scroll (xrow + 1, xcol + 1, yrow - 1, xcol + ylen, 1)
+               @ ycrow, xcol + 1 say f_truncate (&xdispfld, ylen)
+            else
+               scroll (xrow + 1, xcol + 4, yrow - 1, xcol + ylen, 1)
+               @ ycrow, xcol + 1 say f_truncate (chr (65 + ycrow - xrow - 1) + ;
+                  ". " + &xdispfld, ylen)
+            endif
+         endif
+         ycnt = ycnt + 1
+      enddo
+   case ykeyin = 13 .or. ykeyin = 27 .or. ykeyin = 4 .or. ykeyin = 19
+      if .not. empty (xfunc) .and. ykeyin = 13
+         do &xfunc
+      elseif .not. ydisponly .or. ykeyin <> 13 
+         setcolor (ycolor)
+         blimempak (-1)
+         if xtitle = "NOTITLE"
+            restscreen (xrow + 1, xcol - 1, yrow + 1, xcol + ylen + 1, yscn)
+         else
+            restscreen (xrow, xcol - 1, yrow + 1, xcol + ylen + 1, yscn)
+         endif
+         blimempak (-1)
+         set cursor on
+         if ykeyin <> 27
+            return .t.
+         else
+            go (yrecno)
+            return .f.
+         endif
+      endif
+   otherwise
+      if ykeyin <> (64 + ycrow - xrow)
+         skip ykeyin - 64 - ycrow + xrow
+         ycrow = ykeyin - 64 + xrow
+      endif
+      keyboard chr (13)
+   endcase
+enddo
+
+
+******************************
+function nextrec
+
+parameter xval
+
+return left (xval, len (xval) - 1) + chr (asc (right (xval, 1)) + 1)
+
+
+******************************
+function f_pick_a
+
+parameters xrow, xcol, xcolor, xtitle, xarray, xsize, xopick
+private ycolor, ylen, yscn, yrow, ycrow, ykeyin, yptr, ycnt, ysrow
+
+set cursor off
+yrow = xrow + xsize + 1
+if yrow > 23
+   yrow = 23
+endif
+
+ylen = len (xarray [1]) + 3
+
+if xopick < 1
+   ycnt = 1
+elseif xopick > xsize
+   ycnt = xsize
+else
+   ycnt = xopick
+endif
+
+if (yrow - xrow - 1) < (xsize - ycnt + 1)
+   yptr = ycnt
+else
+   yptr = ycnt - ((yrow - xrow - 1) - (xsize - ycnt + 1))
+endif
+
+if empty (xcolor)
+   xcolor = gpickback
+endif
+ycolor = setcolor (xcolor)
+if (xcol + ylen + 1) > 78
+   xcol = 77 - ylen
+endif
+yscn = f_box (xrow, xcol, yrow, xcol + ylen + 1)
+@ xrow, xcol + 4 say xtitle
+ycrow = xrow + 1
+do while ycrow < yrow .and. yptr <= xsize
+   if yptr = ycnt
+      ysrow = ycrow
+   endif
+   @ ycrow, xcol + 1 say chr (65 + ycrow - xrow - 1) + ". " + xarray [yptr]
+   yptr = yptr + 1
+   ycrow = ycrow + 1
+enddo
+yptr = ycnt
+ycrow = ysrow
+do while .t.
+   setcolor (gpickfore)
+   @ ycrow, xcol + 1 say chr (65 + ycrow - xrow - 1) + ". " + xarray [yptr]
+   do while .t.
+      ykeyin = inkey (0)
+      if ykeyin >= 97 .and. ykeyin <= 122
+         ykeyin = ykeyin - 32
+      endif
+      if (str (ykeyin, 2) + ";") $ " 5;24;13;27;" ;
+            .or. (ykeyin >= 65 .and. ykeyin <= (63 + yrow - xrow))
+         exit
+      endif
+   enddo
+
+   setcolor (xcolor)
+   @ ycrow, xcol + 1 say chr (65 + ycrow - xrow - 1) + ". " + xarray [yptr]
+
+   do case
+   case ykeyin = 5
+      if yptr > 1
+         yptr = yptr - 1
+         if ycrow > xrow + 1
+            ycrow = ycrow - 1
+         else
+            scroll (xrow + 1, xcol + 4, yrow - 1, xcol + ylen, -1)
+         endif
+      endif
+   case ykeyin = 24
+      if yptr < xsize
+         yptr = yptr + 1
+         if ycrow < yrow - 1
+            ycrow = ycrow + 1
+         elseif yptr < xsize
+            scroll (xrow + 1, xcol + 4, yrow - 1, xcol + ylen, 1)
+         endif
+      endif
+   case ykeyin = 13 .or. ykeyin = 27
+      setcolor (ycolor)
+      f_restbox (yscn)
+      set cursor on
+      if ykeyin = 27
+         return 0
+      else
+         return yptr
+      endif
+   otherwise
+      if ykeyin <> (64 + ycrow - xrow)
+         yptr = yptr + ykeyin - 64 - ycrow + xrow
+         ycrow = ykeyin - 64 + xrow
+      endif
+      keyboard chr (13)
+   endcase
+enddo
+
+******************************
+function f_edit
+
+parameters xdbfld, xdbcol, xeditno, xdelete, xdbvalid, xdbpict, xedfld
+private yvalid, ypict, n, yedlen, ymaxlen, yfld1, yfld2, yrecno, yvldstr, yans1
+private x1, x2, x3, yd1, yd2, yedscn, yfldlen
+private yedit, ydflag
+if empty (fieldname (1))
+   return .f.
+endif
+
+yedit = (pcount () < 7)
+yvalid = (pcount () < 5)
+ypict = (pcount () < 6)
+
+if pcount () < 3
+   xeditno = 0
+endif
+if pcount () < 4
+   xdelete = .t.
+endif
+
+yedlen = len (xdbfld)
+yrecno = recno ()
+go bottom
+skip 1
+ymaxlen = 0
+for n = 1 to yedlen
+   yfld1 = xdbfld [n]
+   yfld2 = "l_" + yfld1
+   &yfld2 = &yfld1
+   yfld2 = "l_o" + yfld1
+   &yfld2 = &yfld1
+   if len (xdbcol [n]) > ymaxlen
+      ymaxlen = len (xdbcol [n])
+   endif
+next
+yd1 = ""
+yd2 = ""
+yfldlen = 0
+for n = 1 to yedlen
+   x1 = len (xdbcol [n])
+   x2 = xdbfld [n]
+   if type (x2) = "C"
+      x3 = len (&x2)
+   elseif type (x2) = "D"
+      x2 = "dtoc(" + x2 + ")"
+      x3 = 8
+   elseif type (x2) = "L"
+      x2 = "if(" + x2 + ",[Y],[N])"
+      x3 = 1
+   elseif type (x2) = "N"
+      x2 = "str (" + x2 + ")"
+      x3 = len (&x2)
+   endif
+   if x3 > yfldlen
+      yfldlen = x3
+   endif
+
+   if yedit
+      ydflag = .t.
+   else
+      ydflag = xedfld [n]
+      ydflag = &ydflag
+   endif
+   
+   if ydflag
+
+   if x1 > x3
+      if empty (yd1)
+         yd1 = xdbcol [n]
+      else
+         yd1 = yd1 + "Â" + xdbcol [n]
+      endif
+      yd2 = yd2 + "+[" + if (empty (yd2), "", "³") + ;
+            replicate (" ", int ((x1 - x3) / 2)) + "]+" + ;
+            x2 + "+[" + replicate (" ", x1 - x3 - int ((x1 - x3) / 2)) + "]"
+   else
+      yd1 = yd1 + if (empty (yd1), "", "Â") + ;
+            replicate ("Ä", int ((x3 - x1) / 2))  + xdbcol [n] ;
+            + replicate ("Ä", x3 - x1 - int ((x3 - x1) / 2))
+      if empty (yd2)
+         yd2 = x2
+      else
+         yd2 = yd2 + "+[³]+" + x2
+      endif
+   endif
+
+   endif
+
+   xdbcol [n] = left (trim (xdbcol [n]) + replicate (".", ymaxlen), ymaxlen)
+next
+
+go (yrecno)
+
+do while .t.
+   yans = f_edpick_f ()
+   if yans = "Q"
+      exit
+   endif
+   if yans = "D"
+      if f_confirm ("Are you sure you want to delete this " + ;
+            "record? [Y/N]", "YN") = "Y"
+         reclock ()
+         delete
+         commit
+         unlock
+         skip 1
+         if eof ()
+            go bottom
+         endif
+      endif
+   else
+      setcolor (gsubcolor)
+      yedscn = f_box (5, 7, yedlen + 6, 11 + yfldlen + ymaxlen)
+      for n = 1 to yedlen
+         @ 5 + n, 9 say xdbcol [n]
+         yfld1 = "l_" + xdbfld [n]
+         if yans = "A"
+            yfld2 = stuff (yfld1, 3, 0, "o")
+         else
+            yfld2 = xdbfld [n]
+         endif
+         &yfld1 = &yfld2
+      next
+      do while .t.
+         for n = 1 to yedlen
+            yfld1 = "l_" + xdbfld [n]
+            if (xeditno <> 0 .and. n < xeditno) .and. yans <> "A"
+               if ypict
+                  @ 5 + n, 9 + ymaxlen + 1 say &yfld1
+               else
+                  @ 5 + n, 9 + ymaxlen + 1 say &yfld1 pict xdbpict [n]
+               endif
+            elseif yvalid
+               if ypict
+                  @ 5 + n, 9 + ymaxlen + 1 get &yfld1
+               else
+                  @ 5 + n, 9 + ymaxlen + 1 get &yfld1 pict xdbpict [n]
+               endif
+            else
+               yvldstr = xdbvalid [n]
+               if ypict
+                  @ 5 + n, 9 + ymaxlen + 1 get &yfld1 valid &yvldstr
+               else
+                  @ 5 + n, 9 + ymaxlen + 1 get &yfld1 pict xdbpict [n] ;
+                     valid &yvldstr
+               endif
+            endif
+         next
+         f_rd ()
+         if yans = "A" .and. lastkey() = 27      && 06.19.00
+            yans1 = f_confirm ("[E]dit   [V]oid", "EV")
+         elseif yans = "A"
+            yans1 = f_confirm ("[C]onfirm   [E]dit   [V]oid", "CEV")
+         else
+            yans1 = f_confirm ("[C]onfirm   [E]dit   [I]gnore", "CEI")
+         endif
+         if yans1 = "C"
+            if yans = "A"
+               append blank
+            endif
+            reclock ()
+            for n = 1 to yedlen
+               yfld1 = xdbfld [n]
+               yfld2 = "l_" + yfld1
+               if type (yfld2) = "D"
+                  ydate = &yfld2
+                  f_y2k (@ydate)
+                  replace &yfld1 with ydate
+               else
+                  replace &yfld1 with &yfld2
+               endif
+            next
+            commit
+            unlock
+            exit
+         elseif yans1 $ "IV"
+            go yrecno     && 06.19.00
+            exit
+         endif
+      enddo
+      f_restbox (yedscn)
+   endif
+enddo
+
+
+******************************
+function f_edpick_f
+
+private ylen, yrow, ycrow, ykeyin, yrecno, ycnt, xpick
+
+set cursor off
+
+yrecno = recno ()
+yrow = 3 + reccount ()
+if yrow > 22
+   yrow = 22
+endif
+
+ylen = len (yd1)
+ycnt = 1
+do while .t.
+   skip
+   if eof ()
+      exit
+   elseif ycnt < (yrow - 3)
+      ycnt = ycnt + 1
+   else
+      exit
+   endif
+enddo
+
+go (yrecno)
+if ycnt < (yrow - 2 - 1)
+   skip (ycnt - yrow + 2 + 1)
+   if bof ()
+      go top
+   endif
+endif
+
+setcolor (gpickback)
+
+@ 2, 2 say chr (218) + replicate (chr (196), ylen) + chr (191)
+@ 2, 3 say yd1
+ycrow = 3
+ycnt = 99
+do while ycrow < yrow .and. .not. eof ()
+   if yrecno = recno ()
+      ycnt = ycrow
+   endif
+   @ ycrow, 2 say chr (179) + f_truncate (&yd2, ylen) + chr (179)
+   skip
+   ycrow = ycrow + 1
+enddo
+if ycnt = 99
+   ycnt = ycrow - 1
+endif
+yrow = ycrow
+@ yrow, 2 say chr (192) + replicate (chr (196), ylen) + chr (217)
+if yrow < 22
+   setcolor (gbluecolor)
+   @ yrow + 1, 0 clear to yrow + 2, 79
+endif
+f_shadow (2, 2, yrow, ylen + 1)
+
+go (yrecno)
+ycrow = ycnt
+setcolor (gredcolor)
+if xdelete
+   @ 24,01 say "[A]dd  [U]pdate  [D]elete  [Q]uit.......... [ ]"
+else
+   @ 24,01 say "[U]pdate  [Q]uit........................... [ ]"
+endif
+
+do while .t.
+   if yrow > 3
+      setcolor (gpickfore)
+      @ ycrow, 3 say f_truncate (&yd2, ylen)
+   endif
+   setcolor (gredcolor)
+   ykeyin = 0
+   set cursor on
+   @ 24, 46 say ""
+   do while .t.
+      ykeyin = f_getkey ()
+      if ykeyin = 13
+         ykeyin = 85
+      endif
+      if ykeyin = 27
+         ykeyin = 81
+      endif
+      if ykeyin >= 32 .and. ykeyin <= 127
+         xpick = upper (chr (ykeyin))
+         @ 24, 46 say xpick
+         @ 24, 46 say ""
+         if xpick $ "Q" + if (xdelete, "A", "") + ;
+               if (yrow = 3, "", "U" + if (xdelete, "D", ""))
+            @ 24, 00
+            set cursor off
+            return xpick
+         endif
+         tone (500, 9)
+      endif
+      if (str (ykeyin, 2) + ";") $ " 5;24;18; 3;" .and. yrow > 3
+         exit
+      endif
+   enddo
+   set cursor off
+   setcolor (gpickback)
+   @ ycrow, 3 say f_truncate (&yd2, ylen)
+   do case
+   case ykeyin = 5
+      skip -1
+      if bof ()
+         go top
+      else
+         if ycrow > 3
+            ycrow = ycrow - 1
+         else
+            scroll (3, 3, yrow - 1, 2 + ylen, -1)
+         endif
+      endif
+   case ykeyin = 24
+      skip 1
+      if eof ()
+         go bottom
+      else
+         if ycrow < yrow - 1
+            ycrow = ycrow + 1
+         else
+            scroll (3, 3, yrow - 1, 2 + ylen, 1)
+         endif
+      endif
+   case ykeyin = 18
+      ycnt = 1
+      do while ycnt <= (yrow - 2 - 2)
+         skip -1
+         if bof ()
+            go top
+            exit
+         endif
+         if ycrow > 2 + 1
+            ycrow = ycrow - 1
+         else
+            scroll (3, 3, yrow - 1, 2 + ylen, -1)
+            @ ycrow, 3 say f_truncate (&yd2, ylen)
+         endif
+         ycnt = ycnt + 1
+      enddo
+   case ykeyin = 3
+      ycnt = 1
+      do while ycnt <= (yrow - 2 - 2)
+         skip 1
+         if eof ()
+            go bottom
+            exit
+         endif
+         if ycrow < yrow - 1
+            ycrow = ycrow + 1
+         else
+            scroll (3, 3, yrow - 1, 2 + ylen, 1)
+            @ ycrow, 3 say f_truncate (&yd2, ylen)
+         endif
+         ycnt = ycnt + 1
+      enddo
+   endcase
+enddo
+
+
+
+******************************
+function f_retrieve
+
+private xfld, xlfld, n
+
+for n = 1 to fcount ()
+   xfld = field (n)
+   xlfld = "L_" + xfld
+   &xlfld = &xfld
+next
+
+
+******************************
+function f_replace
+
+private xfld, xlfld, n, ydate
+
+reclock ()
+for n = 1 to fcount ()
+   xfld = field (n)
+   xlfld = "L_" + xfld
+   if type (xlfld) = "D"
+      ydate = &xlfld
+      f_y2k (@ydate)
+      replace &xfld with ydate
+   else
+      replace &xfld with &xlfld
+   endif
+next
+commit
+unlock
+
+
+******************************
+function f_add
+
+parameters xscname, xalias, xfunc
+private ykeyin
+if pcount () < 3
+   xfunc = ""
+endif
+
+f_screen (0, xscname)
+do while .t.
+   f_rd ()
+   ykeyin = f_confirm ("[C]onfirm  [E]dit  [V]oid", "CEV")
+   do case
+   case ykeyin = "C"
+      if .not. empty (xfunc)
+         do &xfunc
+      endif
+
+      select &xalias
+      append blank
+      f_replace ()
+      f_fupdate ("A")
+      exit
+   case ykeyin = "E"
+      f_screen (1, xscname)
+      loop
+   case ykeyin = "V"
+      exit
+   endcase
+enddo
+
+
+******************************
+function f_update
+
+parameters xscname, xalias, xfunc1, xfunc2, xfunc3
+private ykeyin, ykey
+
+if pcount () < 3
+   xfunc1 = ""
+endif
+if pcount () < 4
+   xfunc2 = ""
+endif
+if pcount () < 5
+   xfunc3 = ""
+endif
+
+select &xalias
+f_retrieve ()
+if .not. empty (xfunc1)
+   do &xfunc1
+endif
+
+f_screen (0, xscname)
+
+do while .t.
+   ykeyin = f_confirm ("[U]pdate  [D]elete  [N]ext  [P]revious  [Q]uit", ;
+      "UDNPQ")
+
+   do case
+   case ykeyin = "U"
+      do while .t.
+         f_rd ()
+         ykey = f_confirm ("[C]onfirm  [E]dit  [I]gnore Changes", "CEI")
+         do case
+         case ykey = "C"
+            if .not. empty (xfunc2)
+               do &xfunc2
+            endif
+            select &xalias
+            f_fupdate ("C")
+            f_replace ()
+            exit
+         case ykey = "E"
+            f_screen (1, xscname)
+            loop
+         case ykey = "I"
+            if f_confirm ("Are You Sure to Ignore the change? [Y/N]", ;
+                  "YN") = "Y"
+               exit
+            else
+               keyboard chr (18)
+               loop
+            endif
+            exit
+         endcase
+      enddo
+      exit
+   case ykeyin = "D"
+      if f_confirm ("Are you sure? [Y/N]", "YN") = "Y"
+         clear gets
+         if empty (xfunc3)
+            select &xalias
+            f_fupdate ("D")
+            reclock ()
+            delete
+            commit
+            unlock
+         else
+            select &xalias
+            f_fupdate ("D")
+            do &xfunc3
+         endif
+         exit
+      else
+         f_screen (1, xscname)
+      endif
+   case ykeyin = "N"
+      clear gets
+      skip 1
+      if eof ()
+         f_popup ("End of file. Press Any Key...", .t.)
+         go bottom
+      endif
+      select &xalias
+      f_retrieve ()
+      if .not. empty (xfunc1)
+         do &xfunc1
+      endif
+      f_screen (1, xscname)
+   case ykeyin = "P"
+      clear gets
+      skip -1
+      if bof ()
+         f_popup ("Top of file. Press Any Key...", .t.)
+         go top
+      endif
+      select &xalias
+      f_retrieve ()
+      if .not. empty (xfunc1)
+         do &xfunc1
+      endif
+      f_screen (1, xscname)
+   case ykeyin = "Q"
+      clear gets
+      exit
+   endcase
+enddo
+
+
+******************************
+function f_getfld
+
+parameters xfield, xrow, xcol, xcolor, xlen, xformat, xarrow, xhlp
+private ycol, ykey, ypos, yins, ycolor, yfield, ytmpfld
+private yarray [3], ycnt, y, yty, ypos1
+
+if pcount () < 8
+   xhlp = ""
+endif
+ycolor = setcolor (gsubget)
+yins = readinsert ()
+yfield = xfield
+if pcount () < 5
+   xlen = len (yfield)
+endif
+if pcount () < 6
+   xformat = replicate ("X", xlen)
+else
+   xlen = len (xformat)
+endif
+if pcount () < 7
+   xarrow = .f.
+endif
+
+yfield = transform (f_truncate (yfield, xlen), xformat)
+ycnt = 0
+for y = 1 to xlen
+   if .not. (substr (xformat, y, 1) $ "9!X-")
+      ycnt = ycnt + 1
+      yarray [ycnt] = y
+   endif
+next
+ytmpfld = yfield
+for y = ycnt to 1 step -1
+   ytmpfld = stuff (ytmpfld, yarray [y], 1, "")
+next
+
+ypos1 = 1
+do while .t.
+   ypos = ypos1
+   yfield = ytmpfld
+   for y = 1 to ycnt
+      yfield = stuff (yfield, yarray [y], 0, substr (xformat, yarray [y], 1))
+      if yarray [y] <= ypos
+         ypos = ypos + 1
+      endif
+   next
+   @ xrow, xcol say yfield
+   @ xrow, xcol + ypos - 1 say ""
+   ykey = inkey (0)
+   do case
+   case ykey = 27
+      setcolor (ycolor)
+      return .f.
+   case ykey = 13 .or. ((ykey = 5 .or. ykey = 24) .and. xarrow)
+      setcolor (ycolor)
+      xfield = yfield
+      return .t.
+   case ykey = 8
+      if ypos1 > 1
+         if yins
+            ytmpfld = stuff (ytmpfld, ypos1 - 1, 1, "") + " "
+         else
+            ytmpfld = stuff (ytmpfld, ypos1 - 1, 1, " ")
+         endif
+         ypos1 = ypos1 - 1
+      endif
+   case ykey = 22
+      yins = .not. yins
+      readinsert (yins)
+   case ykey = 7
+      ytmpfld = stuff (ytmpfld, ypos1, 1, "") + " "
+   case ykey = 19
+      if ypos1 > 1
+         ypos1 = ypos1 - 1
+      endif
+   case ykey = 4
+      if ypos1 < len (ytmpfld)
+         ypos1 = ypos1 + 1
+      endif
+   case ykey >= 32 .and. ykey <= 127
+      ykey = chr (ykey)
+      yty = substr (xformat, ypos, 1)
+      if yty = "9" .and. ((ykey < "0" .or.  ykey > "9") .and. ykey <> " ")
+         loop
+      endif
+      if yty = "!"
+         ykey = upper (ykey)
+      endif
+      if yins
+         ytmpfld = left (stuff (ytmpfld, ypos1, 0, ykey), len (ytmpfld))
+      else
+         ytmpfld = stuff (ytmpfld, ypos1, 1, ykey)
+      endif
+      if ypos1 < len (ytmpfld)
+         ypos1 = ypos1 + 1
+      endif
+   case ykey = 28
+      if .not. empty (xhlp)
+         do &xhlp
+      endif
+   endcase
+enddo
+
+
+******************************
+function f_getlgc
+
+parameters xrow, xcol, xfld
+private ykey, ychr
+
+do while .t.
+   @ xrow, xcol say ""
+   ykey = inkey (0)
+   if chr (ykey) $ "YNTFyntf"
+      ychr = "." + chr (ykey) + "."
+      xfld = &ychr
+      @ xrow, xcol say xfld picture "Y"
+   elseif ykey = 24 .or. ykey = 13 .or. ykey = 5 .or. ;
+         ykey = 27 .or. ykey = 13 .or. ykey = 3 .or. ykey = 18
+      exit
+   endif
+enddo
+
+
+******************************
+function f_getnum
+
+parameters xfield, xrow, xcol, xcolor, xformat, xarrow
+private ycol, ykey, ypos, ycolor, yfield, ydotpos, ynumkey, ykeypress
+
+ycolor = setcolor (gsubget)
+if pcount () < 6
+   xarrow = .f.
+endif
+yfield = space (len (xformat))
+ypos = 1
+@ xrow, xcol say transform (xfield, xformat)
+
+ykeypress = .f.
+ynumkey = .f.
+do while .t.
+   if ykeypress
+      @ xrow, xcol say yfield
+   endif
+   @ xrow, xcol + ypos - 1 say ""
+   ykey = inkey (0)
+   do case
+   case ykey = 27
+      @ xrow, xcol say transform (xfield, xformat)
+      setcolor (ycolor)
+      return .f.
+   case ykey = 13 .or. ((ykey = 5 .or. ykey = 24) .and. xarrow)
+      if ynumkey
+         xfield = val (yfield)
+         @ xrow, xcol say transform (xfield, xformat)
+         setcolor (ycolor)
+      else
+         @ xrow, xcol say transform (xfield, xformat)
+         setcolor (ycolor)
+      endif
+      return .t.
+   case ykey = 22
+      readinsert (.not. readinsert ())
+   case ykey = 19
+      if ypos > 1
+         ypos = ypos - 1
+      endif
+   case ykey = 4
+      if ypos < len (yfield)
+         ypos = ypos + 1
+      endif
+   otherwise
+      ykey = chr (ykey)
+      if .not. (ykey $ "0123456789 .")
+         loop
+      endif
+      ykeypress = .t.
+      ynumkey = .t.
+      yfield = stuff (yfield, ypos, 1, ykey)
+      if ypos < len (yfield)
+         ypos = ypos + 1
+      endif
+   endcase
+enddo
+
+
+******************************
+function f_findblank
+
+private xkeyfld, xblankfld, xodr
+
+xkeyfld = "_GK" + alltrim (alias ())
+xkeyfld = substr (&xkeyfld, 2)
+xblankfld = "_GB" + alltrim (alias ())
+xblankfld = &xblankfld
+
+seek xblankfld
+
+do while .not. eof () .and. &xkeyfld = xblankfld
+   if rlock ()
+      return .t.
+   else
+      skip
+   endif
+enddo
+append blank
+rlock ()
+return .t.
+
+
+******************************
+function f_fupdate
+
+if .not. gsup
+   return .f.
+endif
+
+parameter xtyp
+
+private xkeyfld, xblankfld, xsel, xodr
+private xfil, xntx, xalias, n, xfld1, xfld2, xkey, xupd
+
+xalias = alltrim (alias ())
+if left (xalias, 5) = "RADBR" .or. left (xalias, 6) = "RACRED"
+   return .f.
+endif
+
+xfil = gsuppath + xalias + ".DBF"
+xntx = gsuppath + xalias + ".NTX"
+
+if .not. file (xfil) .or. .not. file (xntx)
+   return .f.
+endif
+
+xkeyfld = "_GK" + alltrim (alias ())
+xodr = val (left (&xkeyfld, 1))
+xkeyfld = substr (&xkeyfld, 2)
+xblankfld = "_GB" + alltrim (alias ())
+xblankfld = descend (&xblankfld)
+
+xsel = select ()
+xkey = &xkeyfld
+select 0
+
+use &xfil index &xntx alias supfil
+if xodr = 0
+   append blank
+   rlock ()
+   xupd = .t.
+else
+   seek descend (xkey)
+   xupd = .f.
+   if .not. found ()
+      seek xblankfld
+      do while .not. eof () .and. &xkeyfld = xblankfld
+         if rlock ()
+            xupd = .t.
+            exit
+         else
+            skip
+         endif
+      enddo
+      if .not. xupd
+         xupd = .t.
+         append blank
+         rlock ()
+      endif
+   endif
+endif
+if xupd
+   for n = 1 to fcount ()
+      xfld1 = field (n)
+      xfld2 = xalias + "->" + xfld1
+      replace &xfld1 with &xfld2
+   next
+   replace fupdate with xtyp
+   commit
+   unlock
+endif
+
+use
+
+select (xsel)
+return .t.
+
+*****************************
+procedure phonedir
+
+private ysel, ykey, ycolor, yrow, yscn, ycnt
+
+if .not. file (gdbfpath + gusrid + ".dat") .or.  ;
+   .not. file (gdbfpath + gusrid + ".ntx")
+    return
+endif
+
+ysel = select ()
+ycolor = setcolor ()
+yscn = f_box (04, 11, 14, 71)
+set color to
+
+select 0 
+use (gdbfpath + gusrid + ".dat") index (gdbfpath + gusrid + ".ntx")
+
+
+@ 04, 11 say "ÛßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßÛ"
+@ 05, 11 say "Û                P H O N E   B O O K                        Û"
+@ 06, 11 say "Û                                                           Û"
+@ 07, 11 say "Û                                                           Û"
+@ 08, 11 say "Û                                                           Û"
+@ 09, 11 say "Û                                                           Û"
+@ 10, 11 say "Û                                                           Û"
+@ 11, 11 say "Û                                                           Û"
+@ 12, 11 say "Û                                                           Û"
+@ 13, 11 say "Û                                                           Û"
+@ 14, 11 say "ÛÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÛ"
+
+f_phonedir ()
+
+do while .t.
+
+   ykey = space (20)
+   if .not. f_getfld (@ykey, 6, 13, "W/N", 20, replicate ("!",20), .t.)
+      exit
+   endif
+
+   if lastkey () = 5
+      skip -7
+      if bof ()
+         go top
+         f_phonedir ()              &&  skip 6
+      else
+         scroll (07, 13, 13, 70, -1)
+         @ 7, 13 say name+comment+phone
+         skip 6
+      endif
+      loop
+   elseif lastkey () = 24
+      skip 1
+      if eof () 
+         go bott
+         skip -6
+         f_phonedir ()
+      else
+         scroll (07, 13, 13, 70, 1)
+         @ 13, 13 say name+comment+phone
+      endif
+      loop
+   endif
+
+   set softseek on
+   seek ykey
+   set softseek off
+   if eof ()
+      go bott
+      skip -6
+   else 
+      skip 6
+      if eof ()
+         go bott
+      endif
+      skip -6
+   endif
+
+   f_phonedir ()
+
+enddo
+
+setcolor (ycolor)
+f_restbox (yscn)
+select (ysel)
+
+******************************
+function f_phonedir
+
+yrow = 7
+@ 7, 13 clear to 13, 70
+do while .not. eof ()
+   @ yrow, 13 say name+comment+phone
+   yrow = yrow + 1
+   if yrow > 13
+     exit
+   endif
+   skip
+enddo
+
+*****************************
+procedure reminder
+
+private ysel, yfld, ykey, ycolor, yrow, yscn, ycnt
+
+if .not. file (gdbfpath + gusrid + ".cal") .or.  ;
+   .not. file (gdbfpath + gusrid + ".nx2")
+    return
+endif
+
+ysel = select ()
+ycolor = setcolor ()
+yscn = f_box (04, 11, 14, 71)
+set color to
+
+select 0 
+use (gdbfpath + gusrid + ".cal") index (gdbfpath + gusrid + ".nx2")
+
+@ 04, 11 say "ÛßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßÛ"
+@ 05, 11 say "Û                  R E M I N D E R                          Û"
+@ 06, 11 say "Û                                                           Û"
+@ 07, 11 say "Û                                                           Û"
+@ 08, 11 say "Û                                                           û"
+@ 09, 11 say "Û                                                           Û"
+@ 10, 11 say "Û                                                           Û"
+@ 11, 11 say "Û                                                           Û"
+@ 12, 11 say "Û                                                           Û"
+@ 13, 11 say "Û                                                           Û"
+@ 14, 11 say "ÛÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÛ"
+
+ykey = date()
+set softseek on
+seek ykey
+set softseek off
+if eof ()
+   go bott
+   skip -6
+endif   
+f_reminder ()
+
+do while .t.
+
+   yfld = "  /  /  "
+   if .not. f_getfld (@yfld, 6, 13, "W/N", 8, "99/99/99", .t.)
+      exit
+   endif
+   ykey = ctod(yfld)
+   if lastkey () = 5
+      skip -7
+      if bof ()
+         go top
+         f_reminder ()      &&  skip 6
+      else
+         scroll (07, 13, 13, 70, -1)
+         @ 7, 13 say dtoc(fdate)+[ ]+ftime+[ ]+event
+         skip 6
+      endif
+      loop
+   elseif lastkey () = 24
+      skip 1
+      if eof () 
+         go bott
+         skip -6
+         f_reminder ()
+      else
+         scroll (07, 13, 13, 70, 1)
+         @ 13, 13 say dtoc(fdate)+[ ]+ftime+[ ]+event
+      endif
+      loop
+   endif
+
+   set softseek on
+   seek ykey
+   set softseek off
+   if eof ()
+      go bott
+      skip -6
+   else 
+      skip 6
+      if eof ()
+         go bott
+      endif
+      skip -6
+   endif
+
+   f_reminder ()
+
+enddo
+
+setcolor (ycolor)
+f_restbox (yscn)
+select (ysel)
+
+******************************
+function f_reminder
+
+yrow = 7
+@ 7, 13 clear to 13, 70
+do while .not. eof ()
+   @ yrow, 13 say dtoc(fdate)+[ ]+ftime+[ ]+event
+   yrow = yrow + 1
+   if yrow > 13
+     exit
+   endif
+   skip
+enddo
+
+******************************
+procedure calendar
+
+private ycolor, yscn
+private yyr, ymo, ykey
+
+ycolor = setcolor ()
+yscn = f_box (04, 11, 19, 71)
+set color to
+
+@ 04, 11 say "ÛßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßÛ"
+@ 05, 11 say "Û                  Sun  Mon  Tue  Wed  Thu  Fri  Sat        Û"
+@ 06, 11 say "Û                 ÚÄÄÄÄÂÄÄÄÄÂÄÄÄÄÂÄÄÄÄÂÄÄÄÄÂÄÄÄÄÂÄÄÄÄ¿      Û"
+@ 07, 11 say "Û                 ³    ³    ³    ³    ³    ³    ³    ³      Û"
+@ 08, 11 say "Û                 ÃÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄ´      Û"
+@ 09, 11 say "Û Month/Year      ³    ³    ³    ³    ³    ³    ³    ³      Û"
+@ 10, 11 say "Û                 ÃÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄ´      Û"
+@ 11, 11 say "Û                 ³    ³    ³    ³    ³    ³    ³    ³      Û"
+@ 12, 11 say "Û                 ÃÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄ´      Û"
+@ 13, 11 say "Û                 ³    ³    ³    ³    ³    ³    ³    ³      Û"
+@ 14, 11 say "Û                 ÃÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄ´      Û"
+@ 15, 11 say "Û                 ³    ³    ³    ³    ³    ³    ³    ³      Û"
+@ 16, 11 say "Û                 ÃÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄÅÄÄÄÄ´      Û"
+@ 17, 11 say "Û                 ³    ³    ³    ³    ³    ³    ³    ³      Û"
+@ 18, 11 say "Û                 ÀÄÄÄÄÁÄÄÄÄÁÄÄÄÄÁÄÄÄÄÁÄÄÄÄÁÄÄÄÄÁÄÄÄÄÙ      Û"
+@ 19, 11 say "ÛÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÛ"
+
+@ 05, 13 say cdow(date())
+@ 06, 13 say dtoc(date())
+yyr = substr(dtos(date()),1,4)
+ymo = substr(dtos(date()),5,2)
+
+y1 = dow(ctod(ymo+"/01/"+yyr))
+yrow = 7
+ycol = 31 + (y1-1)*5
+for i = 1 to 5
+   for j = 1 to 7
+      if (i-1)*7+j > day(ctod(ymo+"/"+str((i-1)*7+j,2)+"/"+yyr))
+         exit
+      endif
+      @ yrow, ycol say str((i-1)*7+j,2)
+      ycol = ycol + 5
+      if ycol > 61
+         yrow = yrow + 2
+         ycol = 31
+      endif
+   next
+next
+
+ykey = ymo + "/" + yyr
+do while .t.
+   if .not. f_getfld (@ykey, 11, 16, "W/N", 7, "99/9999", .t.)
+      exit
+   endif
+   ymo = substr(ykey,1,2)
+   yyr = substr(ykey,4,4)
+   ymo = if (ymo > "13" .or. ymo < "01", "01", ymo)
+   yyr = if (yyr > "2999", "2999", yyr)       
+   ykey = ymo + "/" + yyr
+
+   if lastkey () = 5     && up arrow
+     ymo = strtran (str(val(ymo)+1,2), " ", "0")
+     if ymo > "12"
+        yyr = if (yyr="2999", "0000", strtran (str(val(yyr)+1,4), " ", "0"))
+        ymo = "01" 
+     endif
+     ykey = ymo + "/" + yyr
+   endif
+
+   if lastkey () = 24    && down arrow
+     ymo = strtran (str(val(ymo)-1,2), " ", "0")
+     if ymo < "01"
+        yyr = if (yyr="0000", "2999", strtran (str(val(yyr)-1,4), " ", "0"))
+        ymo = "12" 
+     endif
+     ykey = ymo + "/" + yyr
+   endif
+
+   yrow = 7
+   ycol = 31
+   for i = 1 to 6
+      for j = 1 to 7
+         @ yrow, ycol say "  "
+         ycol = ycol + 5
+         if ycol > 61
+            yrow = yrow + 2
+            ycol = 31
+         endif
+      next
+   next
+
+   y1 = dow(ctod(ymo+"/01/"+yyr))
+   yrow = 7
+   ycol = 31 + (y1-1)*5
+   for i = 1 to 5
+      for j = 1 to 7
+         if (i-1)*7+j > day(ctod(ymo+"/"+str((i-1)*7+j,2)+"/"+yyr))
+            exit
+         endif
+         @ yrow, ycol say str((i-1)*7+j,2)
+         ycol = ycol + 5
+         if ycol > 61
+            yrow = yrow + 2
+            ycol = 31
+         endif
+      next
+   next
+enddo
+
+setcolor (ycolor)
+f_restbox (yscn)
+
+
+******************************
+procedure calculator
+
+private ykey, ycolor, xformat, num, ans, oper, yscn
+
+ycolor = setcolor ()
+yscn = f_box (04, 11, 14, 71)
+set color to
+
+ykey = 0
+xformat = "999999999.99"
+
+@ 04, 11 say "ÛßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßÛ"
+@ 05, 11 say "Û  ÚÄÄÄÂÄÄÄÂÄÄÄÂÄÄÄ¿                                        Û"
+@ 06, 11 say "Û  ³ 7 ³ 8 ³ 9 ³ + ³                                        Û"
+@ 07, 11 say "Û  ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´                               ÚÄÄÄÄÄ¿  Û"
+@ 08, 11 say "Û  ³ 4 ³ 5 ³ 6 ³ - ³                               ³ +/- ³  Û"
+@ 09, 11 say "Û  ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´                               ÃÄÄÄÄÄ´  Û"
+@ 10, 11 say "Û  ³ 1 ³ 2 ³ 3 ³ * ³                               ³  C  ³  Û"
+@ 11, 11 say "Û  ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´                               ÃÄÄÄÄÄ´  Û"
+@ 12, 11 say "Û  ³ 0 ³ . ³   ³ / ³                               ³ A C ³  Û"
+@ 13, 11 say "Û  ÀÄÄÄÁÄÄÄÙ   ÀÄÄÄÙ                               ÀÄÄÄÄÄÙ  Û"
+@ 14, 11 say "ÛÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÛ"
+
+
+num = 0.00
+ans = 0.00
+
+do while .t.
+   if .not. f_getnum2 ()
+      exit
+   endif
+   if oper = "A"
+      num = 0.00
+      ans = 0.00
+      @ 13, 33 say " * CLEAR *   "
+      scroll (05, 31, 13, 61, 2)
+      loop
+   endif
+   ans = f_calc2 (ans, num)
+   scroll (05, 31, 13, 61, 1)
+enddo
+setcolor (ycolor)
+f_restbox (yscn)
+
+      
+******************************
+function f_calc2
+
+parameter xnum1, xnum2
+
+do case
+case oper = "+"
+   if (xnum1 + xnum2) > 999999999.99
+      @ 13, 47 say " * OVERFLOW *"
+      return 0
+   else
+      @ 13, 47 say xnum1 + xnum2 pict xformat
+      @ 13, 59 say "="
+      return xnum1 + xnum2
+   endif
+case oper = "-"
+   if (xnum1 - xnum2) < -99999999.99
+      @ 13, 47 say " * OVERFLOW *"
+      return 0
+   else
+      @ 13, 47 say xnum1 - xnum2 pict xformat
+      @ 13, 59 say "="
+      return xnum1 - xnum2
+   endif
+case oper = "*"
+   if (xnum1 * xnum2) > 999999999.99
+      @ 13, 47 say " * OVERFLOW *"
+      return 0
+   else
+      @ 13, 47 say xnum1 * xnum2 pict xformat
+      @ 13, 59 say "="
+      return xnum1 * xnum2
+   endif
+case oper = "/"
+   if xnum2 = 0
+      @ 13, 47 say " * OVERFLOW *"
+      return 0
+   elseif (xnum1 / xnum2) > 999999999.99 .or. (xnum1 / xnum2) < -99999999.99
+      @ 13, 47 say " * OVERFLOW *"
+      return 0
+   else
+      @ 13, 47 say xnum1 / xnum2 pict xformat
+      @ 13, 59 say "="
+      return xnum1 / xnum2
+   endif
+otherwise
+   @ 13, 47 say ans pict xformat
+   @ 13, 59 say "="
+   return ans
+endcase
+                                              
+
+******************************
+function f_getnum2
+
+private ypos, yfield, ydotpos, ynumkey, n, yins
+
+yins = readinsert ()
+setcolor ("n/w")
+yfield = transform (num, xformat)
+ypos = 1
+@ 13, 33 say yfield
+
+do while .t.
+   @ 13, 33 say yfield
+   @ 13, 33 + ypos - 1 say ""
+   ykey = inkey (0)
+   oper = upper (chr (ykey))
+   do case
+   case ykey = 27
+      set color to
+      return .f.
+   case oper = "C"
+      num = 0
+      yfield = transform (num, xformat)
+      ypos = 1
+      @ 13, 33 say yfield
+   case oper $ "+-*/A" 
+      num = val (yfield)
+      set color to
+      @ 13, 33 say transform (num, xformat)
+      if oper <> "A"
+         @ 13, 45 say oper
+      endif
+      return .t.
+   case ykey = 22
+      yins = .not. yins
+      readinsert (.not. readinsert ())
+   case ykey = 19
+      if ypos > 1
+         ypos = ypos - 1
+      endif
+   case ykey = 4
+      if ypos < len (yfield)
+         ypos = ypos + 1
+      endif
+   case ykey = 7
+      yfield = stuff (yfield, ypos, 1, "") + " "
+   case ykey = 8
+      if ypos > 1
+         if yins
+            yfield = stuff (yfield, ypos - 1, 1, "") + " "
+         else
+            yfield = stuff (yfield, ypos - 1, 1, " ")
+         endif
+         ypos = ypos - 1
+      endif
+   case oper = "N"
+      for n = 1 to 12
+         if substr (yfield, n, 1) <> " "
+            exit
+         endif
+      next
+      if n = 1
+         if substr (yfield, 1, 1) = "-"
+            yfield = substr (yfield, 2) + " "
+         else
+            yfield = "-" + left (yfield, 11)
+         endif
+      elseif n <= 12
+         if substr (yfield, n, 1) = "-"
+            yfield = stuff (yfield, n, 1, " ")
+         else
+            yfield = stuff (yfield, n - 1, 1, "-")
+         endif
+      endif
+   case oper $ "0123456789 ."
+      yfield = stuff (yfield, ypos, 1, oper)
+      if ypos < 12
+         if substr (yfield, ypos + 1, 1) = " "
+            yfield = left (left (yfield, ypos) + space (12), 12)
+         endif   
+         ypos = ypos + 1
+      endif
+   endcase
+enddo
+
+***********************
+* convert date to year2000 format
+* pass by reference
+function f_y2k
+parameter xdate
+if year (xdate) <= 1920   
+   ydate = dtoc(xdate)
+   xdate = ctod(substr(ydate,1,6)+"20"+substr(ydate,7,2))
+endif
+return .t.
+
+**********************************
+* check system message ...
+procedure dispmsg
+private yfil, ycolor, yscn, ycursor
+
+ycursor = iscursor ()
+ycolor = setcolor ()
+yscn = f_box (02, 02, 22, 77)
+set color to
+set key -5 to
+
+yfil = gmsgpath + "@RAC.msg"
+if file (yfil)
+   f_rrout (yfil, .f., "System Message")
+endif
+
+if ycursor
+   set cursor on
+else
+   set cursor off
+endif
+
+setcolor (ycolor)
+f_restbox (yscn)
+set key -5 to dispmsg
+return
+
+******************************
+function block_rate
+parameters xloc, xcode, xclass, xdateout
+yblock = .f.
+
+f_use ("rartml")
+seek xloc+xcode+xclass
+
+do while .not. eof () .and. rartml->floc=xloc .and. rartml->fcode=xcode  ;
+          .and. rartml->fclass = xclass .and. .not. yblock
+   yblock = check_block (xdateout)
+   skip
+enddo
+
+if yblock
+   f_valid (.f.,"Rate is blocked for this period...")
+   use
+   return .t.
+endif
+
+* handle rate code for ALL locations
+*seek space(10)+l_fcode+l_fclass
+*do while .not. eof () .and. rartml->floc=space(10) .and. rartml->fcode=xcode  ;
+*          .and. rartml->fclass = xclass .and. .not. yblock
+*   yblock = check_block ()
+*   skip
+*enddo
+
+select rartml
+use
+if yblock
+   f_valid (.f.,"Rate is blocked for this period...")
+   return .t.
+else
+   return .f.
+endif
+
+*********************
+function check_block
+parameter xdateout
+
+zblock = .f.
+if .not. empty(rartml->fdtfrom1)
+   if xdateout >= rartml->fdtfrom1 .and. xdateout <= rartml->fdtto1
+       zblock = .t.
+   endif
+endif
+if .not. empty(rartml->fdtfrom2)
+   if xdateout >= rartml->fdtfrom2 .and. xdateout <= rartml->fdtto2
+       zblock = .t.
+   endif
+endif
+if .not. empty(rartml->fdtfrom3)
+   if xdateout >= rartml->fdtfrom3 .and. xdateout <= rartml->fdtto3
+       zblock = .t.
+   endif
+endif
+
+return (zblock)
+
+* =====================================================
+function get_usrid
+parameters xid
+private ycolor, yscn, yflg, ypass
+
+ycolor = setcolor (gsubcolor)
+yscn = f_box (05, 30, 08, 57)
+do while .t.
+   xid = space(3)
+   @ 06, 32 say "User ID.... "
+   @ 06, 44 get xid pict "!!!" valid ;
+     f_valid (f_verify ("rausr", 1, xid), "Invalid User Id...") 
+   if f_rd () = 27 .or. empty(xid)
+      yflg = .f.
+      exit
+   endif
+
+   ypass = ""
+   ysp = 44
+   set console off
+   set cursor on
+   @ 07, 32 say "Password... "
+   @ 7, 44 say space(10)
+   do while len (ypass) < 11
+      @ 7, ysp say ""
+      wait to ychr
+      if len (ychr) > 0
+         @ 7, ysp say "X"
+         ysp = ysp + 1
+         ypass = ypass + upper (ychr)
+      else
+         exit
+      endif
+   enddo
+   * set cursor off
+   set console on
+   if .not. f_valid (f_truncate (ypass, len (fpasswd)) = fpasswd, ;
+         "Invalid Password, Please Retry ...")
+      @ 7, 44 say space(10)
+      loop
+   else
+      yflg = .t.
+      exit
+   endif
+
+enddo
+
+f_restbox (yscn)
+setcolor (ycolor)
+return (yflg)
+
+

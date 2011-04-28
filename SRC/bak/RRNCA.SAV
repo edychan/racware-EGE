@@ -1,0 +1,1716 @@
+* ===========================================================================
+* check in rental agreement
+*
+* date: 05/01/91
+* author: KST
+*
+* revision
+* date: 06/18/92
+* edc: fix weekly charge calculation
+* date: 07/06/92
+* edc: fix surcharge calculation
+* date: 09/14/92
+* edc: fix calendar day calculation
+* date: 06/21/93 
+* edc: get lowest charge
+* date: 08/09/93
+* edc: fix gas charge by (M)iles or (G)auge
+* date: 08/31/93
+* edc: retrieve cc track info from raagr
+* date: 12/20/93
+* edc: correct rate calc. for grace 
+* ===========================================================================
+store space (15) to yitem1, yitem2, yitem3, yitem4
+yendedit = .f.
+yfreesell = gfreesell
+store 0.00 to ytot1, ytot2
+store 0 to ysyssurchg, ydaychg
+f_clrscn ("Check In Rental Agreement")
+restore from (gmempath + "RAAGRH2") additive
+l_ftrack = space(70)
+if .not. rrnpkra ("O")
+   return
+endif
+* 08/31/93: edc: restore cc track 1 info. from raagr
+gccinfo = substr(l_ftrack,1,at('?',l_ftrack)-1)      
+
+f_use ("RASYS")
+go top
+ylowrchg = flowrchg           && get lowest charge
+use
+
+f_use ("RALOC")
+seek l_floc
+if found ()
+   yggracehr = fgracehr
+   yggracefr = ffreehr
+   ygraceins = fgraceins
+   ygfuelchg = ffuelchg
+   ygfueltax = ffueltax
+   ygsurchg = fsurchg
+   ysurtx = fsurtx
+   ygwkmin = fwkmin
+   ygwkmax = fwkmax
+   ygmthmin = fmthmin
+   ygmthmax = fmthmax
+else
+   yggracehr = ggracehr
+   yggracefr = ggracefr
+   ygfuelchg = gfuelchg
+   ygfueltax = gfueltax
+   ygraceins = ggraceins
+   ygsurchg = gsurchg
+   * ygsurtx = gsurtx
+   ysurtx = gsurtx         && 06/18/93 (edc): typo
+   ygwkmin = gwkmin
+   ygwkmax = gwkmax
+   ygmthmin = gmthmin
+   ygmthmax = gmthmax
+endif
+use
+f_getscn ("RRNCA")
+store "" to yccnum1, yccnum2, yccnum3
+store 0.00 to yamtdue1, yamtdue2, yamtdue3
+store space (30) to yauthstat1, yauthstat2, yauthstat3
+store __gccspecauth to yrectyp1, yrectyp2, yrectyp3
+store .f. to yauthonly1, yauthonly2, yauthonly3
+yccswipe1 = if(empty(gccinfo),"M","C")   && 11/11/93 card or manual
+yccswipe2 = "M"
+yccswipe3 = "M"
+
+select raagr
+set key 28 to rrncah
+set key -1 to rrncahlp
+set key -2 to rrncahlp2
+
+do fgetrrnca with .t.
+do while .t.
+   ykeyin = f_confirm ("[C]heck In  [N]ext  [P]revious  [Q]uit", "CNPQ")
+   do case
+   case ykeyin = "C"
+      do while .t.
+         setcolor (gredcolor)
+         if .not. yfreesell
+            @ 24, 01 say "F3 Overwrite Free Sell"
+         endif
+         setcolor (gbluecolor)
+         f_rd ()
+         if yendedit
+            ykey = f_confirm ("[C]onfirm  [E]dit  [I]gnore Changes", "CEI")
+         else
+            ykey = f_confirm ("[E]dit  [I]gnore Changes", "EI")
+         endif
+         do case
+         case ykey = "C"
+            if f_confirm ("Do you want to print contract? ", "YN") = "Y"
+               do rrnprt with "I"
+            endif
+            f_popup ("Please Wait While Saving Closed Contract...", .f.)
+            f_use ("raagrh")
+            append blank
+            l_frastat = "C"
+            f_replace ()
+            f_fupdate ("A")
+            use
+            select raagr
+            f_clrrec ()
+            f_use ("ravm", 1)
+            seek l_funit
+            if found ()
+               f_fupdate ("C")
+               reclock ()
+               if .not. empty (freason)
+                  replace fstatus with "H"
+               else
+                  replace fstatus with if (gautopkvh, "I", "A")
+               endif
+               replace floc with l_frloc
+               replace futime with dtos (l_fdatein) + l_ftimein
+               replace fcurra with 0, frenter with " "
+               replace flastra with l_frano, fckindt with l_fdatein
+               replace fmileage with l_fmlgin, fdueback with ctod ("  /  /  ")
+               commit
+               unlock
+            endif
+            if ravm->fresv
+               f_use ("RAVRES", 1)
+               seek l_funit + "A" + l_floc + str (l_frano, 6)
+               if found ()
+                  f_clrrec ()
+               endif
+               use
+            endif
+
+            f_use ("RAAGRX")
+            append blank
+            l_fexchg = .f.
+            f_replace ()
+            if .not. empty (l_fexdate)
+               reclock ()
+               replace fdateout with l_fexdate, ftimeout with l_fextime
+               commit
+               unlock
+            endif
+            reclock ()
+            replace ffueltot with l_ffueltot - l_fefueltot
+            replace fdmgtot with l_fdmgtot - l_fedmgtot
+            commit
+            unlock
+            f_fupdate ("A")
+            use
+            f_use ("RACRED", 1)
+            seek l_floc + str (l_frano, 6)
+            do while floc = l_floc .and. frano = l_frano .and. .not. eof ()
+               if .not. (fccnum $ (l_fccnum1 + ";" + l_fccnum2 ;
+                     + ";" + l_fccnum3)) .or. (frectype <> __gccuncap .and. ;
+                     frectype <> __gcccap)
+                  reclock ()
+                  if ftranstyp = "C"
+                     replace fauthamt with -abs (fauthamt), fcapamt with -abs (fcapamt)
+                  endif
+                  replace ftranstyp with "D"
+                  commit
+                  unlock
+               endif
+               skip
+            enddo
+            for y = 1 to 3
+               ystr = "L_FPAYCOD" + str (y, 1)
+               if &ystr = 1
+                  f_findblank ()
+                  ystr1 = "L_FCCNUM" + str (y, 1)
+                  ystr2 = "L_FPAYTYP" + str (y, 1)
+                  ystr3 = "L_FCCEXP" + str (y, 1)
+                  ystr4 = "L_FAUTHCD" + str (y, 1)
+                  ystr5 = "L_FAMT" + str (y, 1)
+                  ystr6 = "YAUTHONLY" + str (y, 1)
+                  ystr7 = "YRECTYP" + str (y, 1)
+                  ystr8 = "YAUTHSTAT" + str (y, 1)
+                  ystr9 = "YCCSWIPE" + str (y, 1)      && 11/11/93 card swipe or manual enter
+                  replace fccnum with &ystr1, fcctype with &ystr2
+                  replace fccexp with &ystr3, fauthcode with &ystr4
+                  replace fauthamt with abs (&ystr5), fauthonly with &ystr6
+                  replace frectype with if (empty (gccnet), __gccuncap, &ystr7)
+                  replace fauthstat with &ystr8
+                  replace fauthdate with date (), fauthtime with time ()
+                  replace ffname with l_ffname, flname with l_flname
+                  replace fmname with &ystr9      && 11/11/93 card swipe or manual enter
+                  replace floc with l_floc, frano with l_frano
+                  replace frloc with l_frloc
+                  if &ystr5 < 0.00
+                     replace ftranstyp with "C"
+                  elseif .not. empty (&ystr4) .and. &ystr7 = __gccspecauth
+                     replace ftranstyp with "F"
+                  else
+                     replace ftranstyp with "S"
+                  endif
+                  commit
+                  unlock
+                  f_fupdate ("A")
+               endif
+            next
+            f_use ("RADTR")
+            f_findblank ()
+            l_fdrop = 0.00
+            l_frectype = if (l_floc <> l_frloc, "F", "C")
+            f_replace ()
+            f_fupdate ("A")
+            if l_floc <> l_frloc
+               f_findblank ()
+               ytmp = l_frloc
+               l_frloc = l_floc
+               l_floc = ytmp         
+               l_frectype = "T"
+               f_replace ()
+               f_fupdate ("A")
+            endif
+            use
+            exit
+         case ykey = "E"
+            do fgetrrnca with .f.
+            loop
+         case ykey = "I"
+            exit
+         endcase
+      enddo
+      exit
+   case ykeyin = "N"
+      clear gets
+      skip 1
+      if eof ()
+         f_popup ("End of file. Press Any Key...", .t.)
+         go bottom
+      endif
+      f_retrieve ()
+      do fgetrrnca with .t.
+   case ykeyin = "P"
+      clear gets
+      skip -1
+      if bof ()
+         f_popup ("Top of file. Press Any Key...", .t.)
+         go top
+      endif
+      f_retrieve ()
+      do fgetrrnca with .t.
+   case ykeyin = "Q"
+      clear gets
+      exit
+   endcase
+enddo
+set key 28 to
+set key -2 to
+set key -1 to
+close databases
+
+
+******************************
+* F1 help 
+******************************
+procedure rrncah
+
+private yvar
+
+yvar = upper (alltrim (readvar ()))
+if yvar = "L_FDMGTOT"         && display charge of exchanged vehicles
+   f_valid (.f., "Damage Charge For Exchanged Vehicles = " ;
+      + str (l_fedmgtot, 8, 2))
+elseif yvar = "L_FFUELTOT"    && display fuel charge of exchanged vehicles
+   f_valid (.f., "Fuel Charge For Exchanged Vehicles = " ;
+      + str (l_fefueltot, 8, 2))
+elseif yvar = "L_FPAYTYP"     && give listing of valid payment type.
+   f_use ("RAPAYTYP")
+   go top
+   if .not. eof ()
+      locate for fpaycode >= &yvar
+      if eof ()
+         go bottom
+      endif
+      if f_pick_f (10, 68, "", "", "fpaycode")
+         &yvar = rapaytyp->fpaycode
+         keyboard chr (13)
+      endif
+   else
+      f_valid (.f., "No Valid Payment Type Found!!!")
+   endif
+elseif yvar = "L_FCCNUM"      && swipe card
+   private yccnum, yexpdt, ystr
+   ystr = "L_FCCEXP" + right (yvar, 1)
+   yccnum = &yvar
+   yexpdt = &ystr
+   if get_card (@yccnum, l_flname, l_ffname, @yexpdt) .and. ;
+         .not. empty (yccnum)
+      &yvar = yccnum
+      &ystr = yexpdt
+   endif
+elseif yvar = "L_FGASTYP"     && display fuel charge method
+   private yarray [2], yptr
+   yarray [1] = "M - Charge by mileage driven"
+   yarray [2] = "G - Charge by Gauge Reading "
+   yptr = if (l_fgastyp = "M", 1, 2)
+   yptr = f_pick_a (4, 50, "", "", yarray, 2, yptr)
+   if yptr <> 0
+      * l_fgastyp = yarray [yptr]
+      * 08/09/93 (edc): bug
+      l_fgastyp = if(yptr=1,"M","G")
+      keyboard chr (13)
+   endif
+else
+   f_valid (.f., "No Help information for this Field ...")
+endif
+
+******************************
+* get close RA screen
+******************************
+procedure fgetrrnca
+
+parameters xnew
+if xnew
+   if .not. empty (l_fremark)
+      f_valid (.f., l_fremark)
+   endif
+   l_frloc = gloc
+   l_fdatein = date ()
+   l_ftimein = time ()
+   l_fmlgin = l_fmlgout
+   l_fmlg = 0
+   l_ffuelin = l_ffuelout
+   l_femlg = l_femlgin - l_femlgout
+   l_fid2 = gusrid
+endif
+@ 1, 16 say l_frano picture replicate ([9], 6)
+@ 1, 36 say l_flname
+@ 2, 36 say l_ffname
+@ 3, 16 say l_floc
+@ 3, 36 say l_fdateout
+@ 3, 45 say l_ftimeout
+@ 4, 16 get l_frloc picture replicate ([!], 10) ;
+   valid f_valid (l_frloc $ gusrloc)
+@ 4, 36 get l_fdatein valid f_valid (l_fdatein >= l_fdateout)
+@ 4, 45 get l_ftimein picture [99:99] valid rrnca1 ()
+@ 7, 16 say l_funit picture replicate ([!], 10)
+@ 8, 16 get l_fmlgin picture replicate ([9], 6) valid rrnca2 ()
+@ 9, 16 say l_fmlgout picture replicate ([9], 6)
+@ 10, 16 say l_fmlg picture replicate ([9], 6)
+@ 11, 16 say l_ffuelout picture [9]
+@ 11, 23 get l_ffuelin picture [9] valid rrnca3 ()
+@ 7, 37 say l_feunit picture replicate ([!], 10)
+@ 8, 37 say l_femlgin picture replicate ([9], 6)
+@ 9, 37 say l_femlgout picture replicate ([9], 6)
+@ 10, 37 say l_femlg picture replicate ([9], 6)
+@ 11, 37 say l_fefuelou picture [9]
+@ 11, 44 say l_fefuelin picture [9]
+@ 13, 16 get l_fdly picture [999] valid rrncaret (0)
+@ 13, 24 get l_fdlychg picture [9999.99] valid rrnca5 ()
+@ 13, 37 say l_fdlytot picture [99999.99]
+@ 14, 16 get l_fwkd picture [999] valid rrncaret (1)
+@ 14, 24 get l_fwkdchg picture [9999.99] valid rrnca9 ()
+@ 14, 37 say l_fwkdtot picture [99999.99]
+@ 15, 16 get l_fwk picture [999] valid rrncaret (1)
+@ 15, 24 get l_fwkchg picture [9999.99] valid rrnca11 ()
+@ 15, 37 say l_fwktot picture [99999.99]
+@ 16, 16 get l_fmth picture [999] valid rrncaret (1)
+@ 16, 24 get l_fmthchg picture [9999.99] valid rrnca14 ()
+@ 16, 37 say l_fmthtot picture [99999.99]
+@ 17, 16 get l_fhr picture [999] valid rrncaret (1)
+@ 17, 24 get l_fhrchg picture [9999.99] valid rrnca17 ()
+@ 17, 37 say l_fhrtot picture [99999.99]
+@ 18, 16 get l_fmlgs picture [9999] valid rrncaret (1)
+@ 18, 24 get l_fmlgchg picture [9999.99] valid rrnca20 ()
+@ 18, 37 say l_fmlgtot picture [99999.99]
+@ 19, 37 say l_ftmetot + l_fmlgtot picture [99999.99]
+@ 20, 16 get l_fdisc picture [99] valid rrnca22 ()
+@ 20, 37 say l_fdisctot picture [99999.99]
+@ 21, 16 get l_fcdwdays picture [999]
+@ 21, 24 get l_fcdw picture [9999.99] valid rrnca25 ()
+@ 21, 37 say l_fcdwtot picture [99999.99]
+@ 22, 16 get l_fpaidays picture [999]
+@ 22, 24 get l_fpai picture [9999.99] valid rrnca28 ()
+@ 22, 37 say l_fpaitot picture [99999.99]
+*@ 23, 37 say l_fothtot1 + l_fothtot2 picture [99999.99]
+* edc: 12/04/92
+if empty(ygsurchg)
+   @ 23, 37 say l_fothtot1 + l_fothtot2 picture [99999.99]
+else
+   @ 23, 15 say l_fothtot1 + l_fothtot2 picture [99999.99]
+   @ 23, 24 say [Surcharge...]
+   @ 23, 37 get l_fsurchg picture [99999.99] 
+endif
+@ 1, 71 get l_fcredtot picture [99999.99]
+@ 2, 58 get l_ftax picture [99.99] valid rrnca34 ()
+@ 2, 71 say l_ftaxtot picture [99999.99]
+@ 3, 66 get l_fgastyp pict "!" valid rrnca351 ()
+@ 3, 71 get l_ffueltot picture [99999.99]
+@ 4, 71 get l_fdmgtot picture [99999.99] valid rrnca35 ()
+@ 6, 71 get l_fdepamt picture [99999.99] valid rrnca36 ()
+@ 7, 71 say l_famtdue picture [99999.99]
+@ 10, 57 get l_fpaytyp1 picture [!!!] valid rrnca38 ()
+@ 10, 69 get l_fdbacct1 picture replicate ([!], 10) valid ;
+   f_valid (l_fpaycod1 < 3 .or. .not. empty (l_fdbacct1))  
+@ 11, 57 get l_fccnum1 picture replicate ([9}, 20) valid rrnca39 ()
+@ 12, 57 get l_fccexp1 picture "99/99" valid ;
+   f_valid (l_fpaycod1 <> 1 .or. f_expired (l_fccexp1), "Card Expired!!!")
+@ 13, 57 get l_famt1 picture [99999.99] valid rrnca40 ()
+@ 13, 73 get l_fauthcd1 picture replicate ([!}, 6) valid rrnca41 ()
+@ 15, 57 get l_fpaytyp2 picture [!!!] valid rrnca42 ()
+@ 15, 69 get l_fdbacct2 picture replicate ([!], 10) valid ;
+   f_valid (l_fpaycod2 < 3 .or. .not. empty (l_fdbacct2))   
+@ 16, 57 get l_fccnum2 picture replicate ([9], 20) valid rrnca44 ()
+@ 17, 57 get l_fccexp2 picture "99/99" valid ;
+   f_valid (l_fpaycod2 <> 1 .or. f_expired (l_fccexp2), "Card Expired!!!")
+@ 18, 57 get l_famt2 picture [99999.99] valid rrnca45 ()
+@ 18, 73 get l_fauthcd2 picture replicate ([!], 6) valid rrnca46 ()
+
+@ 20, 57 get l_fpaytyp3 picture [!!!] valid rrnca47 ()
+@ 21, 57 get l_fccnum3 picture replicate ([9], 20) valid rrnca48 ()
+@ 22, 57 get l_fccexp3 picture "99/99" valid ;
+   f_valid (l_fpaycod3 <> 1 .or. f_expired (l_fccexp3), "Card Expired!!!")
+@ 23, 57 get l_famt3 picture [99999.99] valid rrnca49 ()
+@ 23, 73 get l_fauthcd3 picture replicate ([!], 6) valid rrnca50 () .and. ;
+   f_compute (@yendedit, .t.)
+
+
+******************************
+* check check in time and date
+******************************
+function rrnca1
+
+if .not. f_valid (f_timeok (@l_ftimein))
+   return .f.
+endif
+if l_fdateout < l_fdatein
+   return .t.
+else
+   return f_valid (l_ftimein >= l_ftimeout)
+endif
+
+
+******************************
+* check mile in with mile out
+******************************
+function rrnca2
+
+if f_valid (l_fmlgin >= l_fmlgout)
+   f_valid (l_fmlgin > l_fmlgout, "Warning!  No Miles Driven!")
+   l_fmlg = l_fmlgin - l_fmlgout
+   @ 10, 16 say l_fmlg picture "999999"
+   return .t.
+else
+   return .f.
+endif
+
+
+******************************
+* check fuel level and do time and mileage calculation
+******************************
+function rrnca3
+
+if .not. f_valid (l_ffuelin <= 8)
+   return .f.
+endif
+do rrncacal1
+return .t.
+
+
+******************************
+* time and mileage calculation
+******************************
+procedure rrncacal1
+private y1, y2, y3, yto, yti, yrdays
+
+f_popup ("Please Wait While Calculating Time & Mileage Charges...", .f.)
+if l_fcalday
+   yto = 0
+   yti = 0
+*   l_fdays = l_fdatein - l_fdateout 
+*   if val (left (l_ftimein, 2)) > val (left (gckintme, 2))
+*      l_fdays = l_fdays + 1
+*   elseif val (left (l_ftimein, 2)) = val (left (gckintme, 2))
+*      if val (substr (l_ftimein, 4, 2)) > val (substr (gckintme, 4, 2))
+*         l_fdays = l_fdays + 1
+*      endif
+*   endif
+*   if l_fdays < 1 
+*      l_fdays = 1 
+*   endif          
+* edc: 09/14/92
+   l_fdays = l_fdatein - l_fdateout + 1
+   y1 = val(left (gckintme,2))*100 + val (substr (gckintme, 4, 2))
+   y2 = val(left (l_ftimeout,2))*100 + val (substr (l_ftimeout, 4, 2))
+   y3 = val(left (l_ftimein,2))*100 + val (substr (l_ftimein, 4, 2))
+
+   if y2 < y1 .and. y3 > y1
+      l_fdays = l_fdays+1
+   endif
+   if y2 >= y1 .and. y3 <= y1
+      l_fdays = l_fdays-1
+   endif
+****
+   ymins = 0
+   l_fhr = 0
+else
+   yto = val (substr (l_ftimeout, 1, 2)) * 60 + ;
+      val (substr (l_ftimeout, 4, 2))
+   yti = val (substr (l_ftimein, 1 ,2)) * 60 + val (substr (l_ftimein, 4, 2))
+   ymins = (l_fdatein - l_fdateout) * 24 * 60 + yti - yto
+   l_fdays = int (ymins / 1440)
+   ymins = ymins - l_fdays * 1440
+   if l_fdays < 1
+      l_fdays = 1
+      ymins = 0
+   endif
+endif
+
+* 12/20/93 (edc) correct rate calc.
+*if ygraceins
+*   if ymins > 0
+*      ydaychg = l_fdays + 1
+*   else
+*      ydaychg = l_fdays
+*   endif
+*endif
+
+if ygraceins
+   ydaychg = if(ymins<=yggracehr,l_fdays,l_fdays + 1)
+else
+   ydaychg = if(ymins<=0,l_fdays,l_fdays + 1)
+endif
+
+if ymins <= yggracehr
+   ymins = 0
+elseif yggracefr
+   ymins = ymins - yggracehr
+endif
+
+l_fhr = int (ymins / 60)
+ymins = ymins - l_fhr * 60
+if ymins > 0
+   if l_fhr >= 23
+      l_fdays = l_fdays + 1
+      l_fhr = 0
+   else
+      l_fhr = l_fhr + 1
+   endif
+   ymins = 0
+endif
+
+* 12/20/93 (edc) correct rate calc.
+*if .not. ygraceins
+*   if l_fhr > 0
+*      ydaychg = l_fdays + 1
+*   else
+*      ydaychg = l_fdays
+*   endif
+*endif
+
+l_fcdwdays = ydaychg
+l_fpaidays = ydaychg
+l_fcdwtot = l_fcdwdays * l_fcdw
+l_fpaitot = l_fpaidays * l_fpai
+
+l_frhr = l_fhr
+l_fdly = l_fdays
+
+if (l_fhr * l_fhrchg) >= l_fdlychg
+   l_fdly = l_fdly + 1
+   l_fhr = 0
+endif
+
+yrdays = l_fdly
+
+l_fwkd = 0
+if l_fwkdday .and. l_fwkdchg > 0.00
+   if l_fdly >= l_fwkdmin
+      if l_fdly < l_fwkdmax
+         l_fwkd = l_fdly
+         l_fwkdtot = l_fwkdchg * l_fdly
+         l_fdly = 0
+         if (l_fhr * l_fhrchg) >= l_fwkdchg
+            l_fwkd = l_fwkd + 1
+            l_fhr = 0
+         endif
+      else
+         l_fwkd = l_fwkdmax
+         l_fdly = l_fdly - l_fwkdmax
+         l_fwkdtot = l_fwkdchg * l_fwkdmax
+      endif
+   elseif l_fdly = (l_fwkdmin - 1) .and. ;
+         (l_fdly * l_fdlychg + l_fhr * l_fhrchg) >= (l_fwkdmin * l_fwkdchg)
+      l_fwkd = l_fwkdmin
+      l_fwkdtot = l_fwkd * l_fwkdchg
+      l_fdly = 0
+      l_fhr = 0
+   endif
+endif
+
+l_fwk = 0
+if l_fwkchg > 0.00       &&  .and. (l_ftmtyp = 3 .or. ylowrchg)
+   if ylowrchg
+   * 06/21/93 (edc): get lowest charge
+      do while l_fdly*l_fdlychg > l_fwkchg
+         l_fwk = l_fwk + 1
+         l_fdly = l_fdly - ygwkmax
+         if l_fdly < 0
+            l_fhr = 0
+            l_fdly = 0
+         endif
+      enddo
+   elseif l_ftmtyp = 3
+      do while l_fdly >= ygwkmin
+         l_fwk = l_fwk + 1
+         l_fdly = l_fdly - ygwkmax
+         if l_fdly < 0
+            l_fhr = 0
+            l_fdly = 0
+         endif
+      enddo
+   endif
+   l_fwktot = l_fwkchg * l_fwk
+else
+   l_fwktot = 0.00
+endif
+
+l_fmth = 0
+if l_fmthchg > 0.00         && .and. (l_ftmtyp = 4 .or. ylowrchg)
+   if ylowrchg
+   * 06/21/93 (edc): get lowest charge
+      if (l_fwk * l_fwkchg) + l_fdly*l_fdlychg >= l_fmthchg
+         l_fwk = int (yrdays/7)
+         l_fdly = yrdays - l_fwk * 7
+         do while (l_fwk * l_fwkchg) + l_fdly*l_fdlychg >= l_fmthchg
+            l_fmth = l_fmth + 1
+            l_fwk = l_fwk - 4                  && 1 month = 4 weeks
+            l_fdly = if(l_fdly>2,l_fdly-2,0)   &&         + 2 days
+            if l_fwk <= 0
+              l_fwk = 0 
+            endif
+         enddo
+      endif
+      l_fwktot = l_fwk * l_fwkchg
+   elseif l_ftmtyp = 4
+      do while l_fdly >= ygmthmin
+         l_fmth = l_fmth + 1
+         l_fdly = l_fdly - ygmthmax
+         if l_fdly < 0
+            l_fhr = 0
+            l_fdly = 0
+         endif
+      enddo
+   endif
+   l_fmthtot = l_fmthchg * l_fmth
+else
+   l_fmthtot = 0.00
+endif
+
+if l_fdlychg > 0.00
+   l_fdlytot = l_fdlychg * l_fdly
+elseif l_fwkchg > 0.00
+   l_fwktot = l_fwktot + l_fwkchg
+   * 06/18/92 - edc bug reported dollar concord
+   l_fwk = if(l_fdly > 0, l_fwk + 1, l_fwk)
+   l_fdly = 0
+else
+   l_fdly = 0
+   l_fmthtot = l_fmthtot + l_fmthchg
+   l_fmth = l_fmth + 1
+endif
+l_fhrtot = l_fhr * l_fhrchg
+l_ftmetot = l_fdlytot + l_fwkdtot + l_fwktot + l_fmthtot + l_fhrtot
+
+l_fmlgs = l_fmlg + l_femlgs
+l_fmlgfree = 0
+if l_fwkd > 0
+   if l_fwkdmlg = 0
+      l_fmlgfree = l_fmlgs
+   elseif l_fwkdmlg > 1
+      l_fmlgfree = l_fmlgfree + l_fwkd * l_fwkdmlg
+   endif
+endif
+if l_fdly > 0
+   if l_fdlymlg = 0
+      l_fmlgfree = l_fmlgs
+   elseif l_fdlymlg > 1
+      l_fmlgfree = l_fmlgfree + l_fdly * l_fdlymlg
+   endif
+endif
+if l_fwk > 0
+   if l_fwkmlg = 0
+      l_fmlgfree = l_fmlgs
+   elseif l_fwkmlg > 1
+      l_fmlgfree = l_fmlgfree + l_fwk * l_fwkmlg
+   endif
+endif
+if l_fmth > 0
+   if l_fmthmlg = 0
+      l_fmlgfree = l_fmlgs
+   elseif l_fmthmlg > 1
+      l_fmlgfree = l_fmlgfree + l_fmth * l_fmthmlg
+   endif
+endif
+
+if l_fmlgfree >= l_fmlgs
+   l_fmlgs = 0
+else
+   l_fmlgs = l_fmlgs - l_fmlgfree
+endif
+l_fmlgtot = l_fmlgs * l_fmlgchg
+
+l_fdisctot = round (l_fdisc * (l_ftmetot + l_fmlgtot) / 100.00, 2)
+
+do rrncacal2
+
+
+******************************
+* additional charge calculation
+******************************
+procedure rrncacal2
+
+f_popup ("Please Wait While Rental Charges...", .f.)
+
+l_fothtot1 = 0.00
+l_fothtot2 = 0.00
+
+yothcnt = 1
+do while yothcnt <= 4
+   * fix surcharge calculation edc 07/06/92
+   *if yothcnt = ysyssurchg
+   *   ystr1 = "L_FORATE" + str (yothcnt, 1)
+   *   l_fsurchg = &ystr1
+   *   ystr1 = "L_FOTAX" + str (yothcnt, 1)
+   *   ysurtx = &ystr1
+   *   yothcnt = yothcnt + 1
+   *   loop
+   *else
+   *   ystr1 = "L_FOITEM" + str (yothcnt, 1)
+   *   if empty (&ystr1)
+   *      exit
+   *   endif
+   *   ystr1 = "L_FORATE" + str (yothcnt, 1)
+   *   ystr2 = "L_FODLY" + str (yothcnt, 1)
+   *   if &ystr2
+   *      ychg = &ystr1 * ydaychg
+   *   else
+   *      ychg = &ystr1
+   *   endif
+   *   ystr2 = "L_FOTOT" + str (yothcnt, 1)
+   *   &ystr2 = ychg
+   *endif
+   * edc:07/06/92
+   ystr1 = "L_FOITEM" + str (yothcnt, 1)
+   if empty (&ystr1)
+      exit
+   endif
+   ystr1 = "L_FORATE" + str (yothcnt, 1)
+   ystr2 = "L_FODLY" + str (yothcnt, 1)
+   if &ystr2
+      ychg = &ystr1 * ydaychg
+   else
+      ychg = &ystr1
+   endif
+   ystr2 = "L_FOTOT" + str (yothcnt, 1)
+   &ystr2 = ychg
+   * edc:07/06/92
+   ystr1 = "L_FOTAX" + str (yothcnt, 1)
+   if &ystr1
+      l_fothtot1 = l_fothtot1 + ychg
+   else
+      l_fothtot2 = l_fothtot2 + ychg
+   endif
+   yothcnt = yothcnt + 1
+enddo
+
+if l_fdmgtot = 0.00
+   l_fdmgtot = l_fedmgtot
+endif
+
+*if ysyssurchg = 0
+*   if type (ygsurchg) = "N"
+*      l_fsurchg = &ygsurchg
+*      y = yothcnt
+*      yothcnt = yothcnt + 1
+*      if y <= 4
+*         ystr1 = "YITEM" + str (y, 1)
+*         &ystr1 = "SURCHARGE      "
+*         ystr1 = "L_FOITEM" + str (y, 1)
+*         &ystr1 = "    "
+*         ystr1 = "L_FORATE" + str (y, 1)
+*         &ystr1 = l_fsurchg
+*         ystr2 = "L_FODLY" + str (y, 1)
+*         &ystr2 = .f.
+*         if ysurtx
+*            l_fothtot1 = l_fothtot1 + &ystr1
+*         else
+*            l_fothtot2 = l_fothtot2 + &ystr1
+*         endif
+*         ystr1 = "L_FOTAX" + str (y, 1)
+*         &ystr1 = ysurtx
+*      else
+*         if ysurtx
+*            l_fothtot1 = l_fothtot1 + l_fsurchg
+*         else
+*            l_fothtot2 = l_fothtot2 + l_fsurchg
+*         endif
+*      endif
+*      ysyssurchg = y
+*   endif
+*else
+*   if ysurtx
+*      l_fothtot1 = l_fothtot1 + l_fsurchg
+*   else
+*      l_fothtot2 = l_fothtot2 + l_fsurchg
+*   endif
+*endif
+
+setcolor (gblueget)
+@ 13, 16 say l_fdly picture [999]
+@ 14, 16 say l_fwkd picture [999]
+@ 15, 16 say l_fwk picture [999]
+@ 16, 16 say l_fmth picture [999]
+@ 17, 16 say l_fhr picture [999]
+@ 18, 16 say l_fmlgs picture [9999]
+@ 20, 16 say l_fdisc picture [99]
+@ 21, 16 say l_fcdwdays picture [999]
+@ 21, 24 say l_fcdw picture [9999.99]
+@ 22, 16 say l_fpaidays picture [999]
+@ 22, 24 say l_fpai picture [9999.99]
+@ 1, 71 say l_fcredtot picture [99999.99]
+@ 2, 58 say l_ftax picture [99.99]
+@ 4, 71 say l_fdmgtot picture [99999.99]
+
+@ 13, 24 say l_fdlychg picture [9999.99]
+@ 14, 24 say l_fwkdchg picture [9999.99]
+@ 15, 24 say l_fwkchg picture [9999.99]
+@ 16, 24 say l_fmthchg picture [9999.99]
+@ 17, 24 say l_fhrchg picture [9999.99]
+@ 18, 24 say l_fmlgchg picture [9999.99]
+
+setcolor (gbluecolor)
+@ 13, 37 say l_fdlytot picture [99999.99]
+@ 14, 37 say l_fwkdtot picture [99999.99]
+@ 15, 37 say l_fwktot picture [99999.99]
+@ 16, 37 say l_fmthtot picture [99999.99]
+@ 17, 37 say l_fhrtot picture [99999.99]
+@ 18, 37 say l_fmlgtot picture [99999.99]
+@ 20, 37 say l_fdisctot picture [99999.99]
+@ 21, 37 say l_fcdwtot picture [99999.99]
+@ 22, 37 say l_fpaitot picture [99999.99]
+
+* edc:07/06/92 calculate surcharge
+
+if .not. empty(ygsurchg)
+   l_fsurchg = &ygsurchg
+   @ 23, 15 say l_fothtot1 + l_fothtot2 picture [99999.99]
+   @ 23, 24 say [Surcharge...]
+   @ 23, 37 say l_fsurchg picture [99999.99] 
+else
+   @ 23, 37 say l_fothtot1 + l_fothtot2 picture [99999.99]
+endif
+
+@ 2, 71 say l_ftaxtot picture [99999.99]
+@ 19, 37 say l_ftmetot + l_fmlgtot picture [99999.99]
+
+* edc: 12/04/92
+*if ysurtx
+*   l_fothtot1 = l_fothtot1 + l_fsurchg
+*else
+*   l_fothtot2 = l_fothtot2 + l_fsurchg
+*endif
+
+f_popback ()
+
+
+******************************
+* calculate daily charge
+******************************
+function rrnca5
+
+l_fdlytot = l_fdlychg * l_fdly
+@ 13, 37 say l_fdlytot picture [99999.99]
+return .t.
+
+
+******************************
+* calculate spec rate charge
+******************************
+function rrnca9
+
+l_fwkdtot = l_fwkdchg * l_fwkd
+@ 14, 37 say l_fwkdtot picture [99999.99]
+return .t.
+
+
+******************************
+* calculate weekly charge
+******************************
+function rrnca11
+
+l_fwktot = l_fwkchg * l_fwk
+@ 15, 37 say l_fwktot picture [99999.99]
+return .t.
+
+
+******************************
+* calculate monthly charge
+******************************
+function rrnca14
+
+l_fmthtot = l_fmthchg * l_fmth
+@ 16, 37 say l_fmthtot picture [99999.99]
+return .t.
+
+
+******************************
+* calculate hourly charge
+******************************
+function rrnca17
+
+l_fhrtot = l_fhrchg * l_fhr
+@ 17, 37 say l_fhrtot picture [99999.99]
+return .t.
+
+
+******************************
+* calculate mileage charge
+******************************
+function rrnca20
+
+l_fmlgtot = l_fmlgchg * l_fmlgs
+@ 18, 37 say l_fmlgtot picture [99999.99]
+l_ftmetot = l_fdlytot + l_fwkdtot + l_fwktot + l_fmthtot + l_fhrtot
+@ 19, 37 say l_ftmetot + l_fmlgtot picture [99999.99]
+return .t.
+
+
+******************************
+* calculate discount
+******************************
+function rrnca22
+
+l_fdisctot = round (l_fdisc * (l_fdlytot + l_fwkdtot + l_fwktot + l_fmthtot + ;
+   l_fhrtot + l_fmlgtot) / 100.00, 2)
+@ 20, 37 say l_fdisctot picture [99999.99]
+
+if lastkey () = 5 .and. .not. yfreesell
+   keyboard chr (5)
+endif
+return .t.
+
+
+******************************
+* calculate cdw
+******************************
+function rrnca25
+
+l_fcdwtot = l_fcdwdays * l_fcdw
+@ 21, 37 say l_fcdwtot picture "99999.99"
+return .t.
+
+
+******************************
+* calculate pai
+******************************
+function rrnca28
+
+l_fpaitot = l_fpaidays * l_fpai
+@ 22, 37 say l_fpaitot picture "99999.99"
+do rrncacal2
+return .t.
+
+
+******************************
+* calculate taxable subtot
+******************************
+function rrnca34
+
+* edc: 12/04/92
+*ytot1 = l_ftmetot + l_fmlgtot - l_fdisctot + if (l_fcdwtax, l_fcdwtot, 0.00) ;
+*   + if (l_fpaitax, l_fpaitot, 0.00) + if (gfueltax, l_ffueltot, 0.00) + ;
+*   l_fothtot1 - l_fcredtot
+ytot1 = l_ftmetot + l_fmlgtot - l_fdisctot + if (l_fcdwtax, l_fcdwtot, 0.00) ;
+   + if (l_fpaitax, l_fpaitot, 0.00) + if (gfueltax, l_ffueltot, 0.00)  ;
+   + if (ysurtx, l_fsurchg, 0.00) + l_fothtot1 - l_fcredtot
+l_ftaxtot = round (ytot1 * l_ftax / 100.00, 2)
+
+@ 2, 71 say l_ftaxtot picture "99999.99"
+return .t.
+
+
+******************************
+* calculate gas charge
+******************************
+function rrnca351
+
+if .not. f_valid (l_fgastyp $ "GM")
+   return .f.
+endif
+
+l_ffueltot = l_fefueltot
+f_use ("ravm", 1)
+seek l_funit
+if found ()
+   *if l_fgastyp = "G" .or. ((l_fmlgin - l_fmlgout) > (ftank * fepa))
+   * 12/28/93 (edc): correct fuel calc.
+   if l_fgastyp = "G" .or. (l_fmlgin - l_fmlgout) > 50
+      if l_ffuelin < l_ffuelout
+         l_ffueltot = l_ffueltot + round (ftank * (l_ffuelout - l_ffuelin) / ;
+            8 * ygfuelchg, 2)
+      endif
+   else
+      l_ffueltot = l_ffueltot + round ((l_fmlgin - l_fmlgout) / ;
+         fepa * ygfuelchg, 2)
+   endif
+endif
+select raagr
+return .t.
+
+
+******************************
+* calculate total
+******************************
+function rrnca35
+* edc: 12/04/92
+*ytot2 = if (l_fcdwtax, 0.00, l_fcdwtot) + if (l_fpaitax, 0.00, l_fpaitot) ;
+*   + l_fothtot2 + l_ffueltot + l_fdmgtot
+ytot2 = if (l_fcdwtax, 0.00, l_fcdwtot) + if (l_fpaitax, 0.00, l_fpaitot) ;
+   + if (ysurtx, 0.00, l_fsurchg) + l_fothtot2 + l_ffueltot + l_fdmgtot
+l_ftotal = round (ytot1 + ytot2 + l_ftaxtot, 2)
+@ 5, 71 say l_ftotal picture [99999.99]
+return .t.
+
+
+******************************
+* calculate amount due
+******************************
+function rrnca36
+
+l_famtdue = round (l_ftotal - l_fdepamt, 2)
+l_famt1 = l_famtdue - l_famt2 - l_famt3
+@ 7, 71 say l_famtdue picture [99999.99]
+
+return .t.
+
+
+******************************
+* check payment code 1
+******************************
+function rrnca51
+
+if l_famt1 = 0.00
+   return .t.
+endif
+if .not. str (l_fpaycod1, 1) $ "123"
+   return .f.
+endif
+if l_fpaycod1 = 1 .or. l_fpaycod1 = 2
+   l_fdbacct1 = space (10)
+endif
+if l_fpaycod1 <> 1
+   l_fccnum1 = space (20)
+   l_fccexp1 = "  /  "
+   l_fauthcd1 = space (6)
+endif
+return .t.
+
+
+******************************
+* check pay code 3
+******************************
+function rrnca57
+
+if l_famt3 = 0.00
+   return .t.
+endif
+if .not. str (l_fpaycod3, 1) $ "12"
+   return .f.
+endif
+if l_fpaycod1 = 2
+   l_fccnum3 = space (20)
+   l_fccexp3 = "  /  "
+   l_fauthcd3 = space (6)
+endif
+return .t.
+
+
+******************************
+* check pay code 2
+******************************
+function rrnca54
+
+if l_famt2 = 0.00
+   return .t.
+endif
+if .not. str (l_fpaycod2, 1) $ "123"
+   return .f.
+endif
+if l_fpaycod2 = 1 .or. l_fpaycod2 = 2
+   l_fdbacct2 = space (10)
+endif
+if l_fpaycod2 <> 1
+   l_fccnum2 = space (20)
+   l_fccexp2 = "  /  "
+   l_fauthcd2 = space (6)
+endif
+return .t.
+
+
+******************************
+* check payment type 1
+******************************
+function rrnca38
+
+if lastkey () = 18
+   return .t.
+endif
+if f_valid (good_paytype (l_fpaytyp1, @l_fpaycod1), "Invalid Payment Type!!!")
+   return f_valid (rrnca51 (), "Invalid Payment Type!!!")
+else
+   return .f.
+endif
+
+
+******************************
+* check credit card number 1
+******************************
+function rrnca39
+
+if l_fpaycod1 <> 1 .or. (yccnum1 = l_fccnum1 .and. yamtdue1 >= l_famt1 .and. ;
+      yamtdue1 <> 0.00)
+   return .t.
+endif
+if f_valid (good_card (l_fccnum1, @l_fpaytyp1), "Invalid Credit Card!!!")
+   setcolor (gblueget)
+   @ 10, 57 say l_fpaytyp1
+   setcolor (gbluecolor)
+   return .t.
+else
+   return .f.
+endif
+
+
+******************************
+* get authorization code for credit card 1
+******************************
+function rrnca40
+
+private yauthcd
+
+if ((yccnum1 = l_fccnum1 .and. yamtdue1 >= l_famt1 .and. yamtdue1 <> 0.00) ;
+      .or. l_fpaycod1 <> 1 .or. .not. gccmodem) .and. .not. empty (l_fauthcd1)
+   return .t.
+endif
+yccnum1 = l_fccnum1
+yamtdue1 = l_famt1
+if l_fpaycod1 = 1 .and. good_cctype (l_fpaytyp1, @yauthonly1)
+   f_use ("racred", 1)
+   seek l_floc + str (l_frano, 6) + l_fccnum1
+   private yauthtot
+   yauthtot = 0.00
+   do while l_floc + str (l_frano, 6) + l_fccnum1 = floc + str (frano, 6) + ;
+         fccnum
+      if frectype = __gccauth
+         yauthtot = yauthtot + if (ftranstyp = "C", -1, 1) * abs (fauthamt)
+         if empty (l_fauthcd1)
+            l_fauthcd1 = fauthcode
+         endif
+      endif
+      skip
+   enddo
+   if yauthtot < l_famt1
+      if raagr->fhldamt >= l_famt1 .and. l_fccnum1 = raagr->fccnum1 .and. ;
+            .not. empty (raagr->fauthcd1) .and. (l_floc <> l_frloc)
+         l_fauthcd1 = raagr->fauthcd1
+         f_findblank ()
+         replace fccnum with l_fccnum1, fcctype with l_fpaytyp1
+         replace fccexp with l_fccexp1, fauthcode with l_fauthcd1
+         replace fauthamt with l_famt1-yauthtot, fauthonly with yauthonly1
+         replace frectype with __gccauth, fauthstat with yauthstat1
+         replace fauthdate with date (), fauthtime with time ()
+         replace ffname with l_ffname, flname with l_flname
+         * 11/11/93: card swipe or manual
+         replace fmname with yccswipe1
+         *
+         replace floc with l_floc, frano with l_frano
+         replace frloc with l_frloc, ftranstyp with "S"
+         commit
+         unlock
+         f_fupdate ("A")
+         yrectyp1 = __gccuncap
+      else
+         yauthcd = l_fauthcd1
+         yret = newauth (if (l_famt1 >= 0.00, "S", "C"), l_fccnum1, ;
+            l_fccexp1, l_famt1 - yauthtot, @l_fauthcd1, @yauthstat1)
+         if empty (l_fauthcd1)
+            l_fauthcd1 = yauthcd
+         endif
+         if yret = "D"
+            yccswipe1 = gccswipe      && save gccswipe set in tformat
+            f_findblank ()
+            replace fccnum with l_fccnum1, fcctype with l_fpaytyp1
+            replace fccexp with l_fccexp1, fauthcode with l_fauthcd1
+            replace fauthamt with l_famt1-yauthtot, fauthonly with yauthonly1
+            replace frectype with __gccauth, fauthstat with yauthstat1
+            replace fauthdate with date (), fauthtime with time ()
+            replace ffname with l_ffname, flname with l_flname
+            * 11/11/93 card or manual (set in tformat)
+            replace fmname with gccswipe
+            *
+            replace floc with l_floc, frano with l_frano
+            replace frloc with l_frloc, ftranstyp with "S"
+            commit
+            unlock
+            f_fupdate ("A")
+            yrectyp1 = __gccuncap
+         elseif yret = "E"
+            yrectyp1 = __gccautherr
+         else
+            yrectyp1 = __gccspecauth
+         endif
+      endif
+   else
+      yrectyp1 = __gccuncap
+   endif
+endif
+set cursor on
+setcolor (gblueget)
+@ 13, 73 say l_fauthcd1
+setcolor (gbluecolor)
+return .t.
+
+
+******************************
+* calculate balance for payment 2
+******************************
+function rrnca41
+
+l_famt2 = l_famtdue - l_famt1 - l_famt3
+if iszero (l_famt2) .and. iszero (l_famt3)
+   yendedit = .t.
+   keyboard chr (18)
+   l_famt2 = 0.00
+endif
+return .t.
+
+
+******************************
+* check payment type 2
+******************************
+function rrnca42
+
+if lastkey () = 18
+   return .t.
+endif
+if f_valid (good_paytype (l_fpaytyp2, @l_fpaycod2), "Invalid Payment Type!!!")
+   return f_valid (rrnca54 (), "Invalid Payment Type!!!")
+else
+   return .f.
+endif
+
+
+******************************
+* check credit card number 2
+******************************
+function rrnca44
+
+if l_fpaycod2 <> 1 .or. (yccnum2 = l_fccnum2 .and. yamtdue2 = l_famt2 ;
+      .and. yamtdue2 <> 0.00)
+   return .t.
+endif
+if f_valid (good_card (l_fccnum2, @l_fpaytyp2), "Invalid Credit Card!!!")
+   setcolor (gblueget)
+   @ 15, 57 say l_fpaytyp2
+   setcolor (gbluecolor)
+   return .t.
+else
+   return .f.
+endif
+
+
+******************************
+* get authorization code for credit card 2
+******************************
+function rrnca45
+
+private yauthcd
+if ((yccnum2 = l_fccnum2 .and. yamtdue2 = l_famt2 .and. yamtdue2 <> 0.00) ;
+      .or. l_fpaycod2 <> 1 .or. .not. gccmodem) .and. .not. empty (l_fauthcd2)
+   return .t.
+endif
+yccnum2 = l_fccnum2
+yamtdue2 = l_famt2
+if l_fpaycod2 = 1 .and. good_cctype (l_fpaytyp2, @yauthonly2)
+   f_use ("racred", 1)
+   seek l_floc + str (l_frano, 6) + l_fccnum2
+   private yauthtot
+   yauthtot = 0.00
+   do while l_floc + str (l_frano, 6) + l_fccnum2 = floc + str (frano, 6) + ;
+         fccnum
+      if frectype = __gccauth
+         yauthtot = yauthtot + if (ftranstyp = "C", -1, 1) * abs (fauthamt)
+         if empty (l_fauthcd2)
+            l_fauthcd2 = fauthcode
+         endif
+      endif
+      skip
+   enddo
+   if yauthtot < l_famt2
+      if raagr->fhldamt >= l_famt2 .and. l_fccnum2 = raagr->fccnum1 .and. ;
+            .not. empty (raagr->fauthcd1) .and. (l_floc <> l_frloc)
+         l_fauthcd2 = raagr->fauthcd1
+         f_findblank ()
+         replace fccnum with l_fccnum2, fcctype with l_fpaytyp2
+         replace fccexp with l_fccexp2, fauthcode with l_fauthcd2
+         replace fauthamt with l_famt2-yauthtot, fauthonly with yauthonly2
+         replace frectype with __gccauth, fauthstat with yauthstat2
+         replace fauthdate with date (), fauthtime with time ()
+         replace ffname with l_ffname, flname with l_flname
+         * 11/11/93: card swipe or manual
+         replace fmname with yccswipe1         && use old cc1
+         *
+         replace floc with l_floc, frano with l_frano
+         replace frloc with l_frloc, ftranstyp with "S"
+         commit
+         unlock
+         f_fupdate ("A")
+         yrectyp2 = __gccuncap
+      else
+         yauthcd = l_fauthcd2
+         yret = newauth (if (l_famt2 >= 0.00, "S", "C"), l_fccnum2, ;
+            l_fccexp2, l_famt2, @l_fauthcd2, @yauthstat2)
+         if empty (l_fauthcd2)
+            l_fauthcd2 = yauthcd
+         endif
+         if yret = "D"
+            yccswipe2 = gccswipe      && save gccswipe set in tformat
+            f_findblank ()
+            replace fccnum with l_fccnum2, fcctype with l_fpaytyp2
+            replace fccexp with l_fccexp2, fauthcode with l_fauthcd2
+            replace fauthamt with l_famt2-yauthtot, fauthonly with yauthonly2
+            replace frectype with __gccauth, fauthstat with yauthstat2
+            replace fauthdate with date (), fauthtime with time ()
+            replace ffname with l_ffname, flname with l_flname
+            * 11/11/93 card or manual (set in tformat)
+            replace fmname with gccswipe
+            *
+            replace floc with l_floc, frano with l_frano
+            replace frloc with l_frloc, ftranstyp with "S"
+            commit
+            unlock
+            f_fupdate ("A")
+            yrectyp2 = __gccuncap
+         elseif yret = "E"
+            yrectyp2 = __gccautherr
+         else
+            yrectyp2 = __gccspecauth
+         endif
+      endif
+   else
+      yrectyp2 = __gccuncap
+   endif
+endif
+set cursor on
+setcolor (gblueget)
+@ 18, 73 say l_fauthcd2
+setcolor (gbluecolor)
+return .t.
+
+
+******************************
+* calculate balance for payment 3
+******************************
+function rrnca46
+
+l_famt3 = l_famtdue - l_famt1 - l_famt2
+if iszero (l_famt3)
+   yendedit = .t.
+   keyboard chr (18)
+   l_famt3 = 0.00
+endif
+return .t.
+
+
+******************************
+* check payment type 3
+******************************
+function rrnca47
+
+if lastkey () = 18
+   return .t.
+endif
+if f_valid (good_paytype (l_fpaytyp3, @l_fpaycod3), "Invalid Payment Type!!!")
+   return f_valid (rrnca57 (), "Invalid Payment Type!!!")
+else
+   return .f.
+endif
+
+
+******************************
+* check credit card number 3
+******************************
+function rrnca48
+
+if l_fpaycod3 <> 1
+   return .t.
+endif
+if yccnum3 = l_fccnum3 .and. yamtdue3 >= l_famt3 .and. yamtdue3 <> 0.00
+   return .t.
+endif
+if f_valid (good_card (l_fccnum3, @l_fpaytyp3), "Invalid Credit Card!!!")
+   setcolor (gblueget)
+   @ 20, 57 say l_fpaytyp3
+   setcolor (gbluecolor)
+   return .t.
+else
+   return .f.
+endif
+
+
+******************************
+* get authorization code for credit card 3
+******************************
+function rrnca49
+
+private yauthcd
+if ((yccnum3 = l_fccnum3 .and. yamtdue3 = l_famt3 .and. yamtdue3 <> 0.00) ;
+      .or. l_fpaycod3 <> 1 .or. .not. gccmodem) .and. .not. empty (l_fauthcd3)
+   return .t.
+endif
+yccnum3 = l_fccnum3
+yamtdue3 = l_famt3
+if l_fpaycod3 = 1 .and. good_cctype (l_fpaytyp3, @yauthonly3)
+   f_use ("racred", 1)
+   seek l_floc + str (l_frano, 6) + l_fccnum3
+   private yauthtot
+   yauthtot = 0.00
+   do while l_floc + str (l_frano, 6) + l_fccnum3 = floc + str (frano, 6) + ;
+         fccnum
+      if frectype = __gccauth
+         yauthtot = yauthtot + if (ftranstyp = "C", -1, 1) * abs (fauthamt)
+         if empty (l_fauthcd2)
+            l_fauthcd2 = fauthcode
+         endif
+      endif
+      skip
+   enddo
+   if yauthtot < l_famt3
+      if raagr->fhldamt >= l_famt3 .and. l_fccnum3 = raagr->fccnum1 .and. ;
+            .not. empty (raagr->fauthcd1) .and. (l_floc <> l_frloc)
+         l_fauthcd3 = raagr->fauthcd1
+         f_findblank ()
+         replace fccnum with l_fccnum3, fcctype with l_fpaytyp3
+         replace fccexp with l_fccexp3, fauthcode with l_fauthcd3
+         replace fauthamt with l_famt3-yauthtot, fauthonly with yauthonly3
+         replace frectype with __gccauth, fauthstat with yauthstat3
+         replace fauthdate with date (), fauthtime with time ()
+         replace ffname with l_ffname, flname with l_flname
+         * 11/11/93: card swipe or manual
+         replace fmname with yccswipe1       && use old cc1
+         *
+         replace floc with l_floc, frano with l_frano
+         replace frloc with l_frloc, ftranstyp with "S"
+         commit
+         unlock
+         f_fupdate ("A")
+         yrectyp3 = __gccuncap
+      else
+         yauthcd = l_fauthcd3
+         yret = newauth (if (l_famt3 >= 0.00, "S", "C"), l_fccnum3, ;
+            l_fccexp3, l_famt3, @l_fauthcd3, @yauthstat3)
+         if empty (l_fauthcd3)
+            l_fauthcd3 = yauthcd
+         endif
+         if yret = "D"
+            yccswipe3 = gccswipe      && save gccswipe set in tformat
+            f_findblank ()
+            replace fccnum with l_fccnum3, fcctype with l_fpaytyp3
+            replace fccexp with l_fccexp3, fauthcode with l_fauthcd3
+            replace fauthamt with l_famt3-yauthtot, fauthonly with yauthonly3
+            replace frectype with __gccauth, fauthstat with yauthstat3
+            replace fauthdate with date (), fauthtime with time ()
+            replace ffname with l_ffname, flname with l_flname
+            * 11/11/93 card or manual (set in tformat)
+            replace fmname with gccswipe
+            *
+            replace floc with l_floc, frano with l_frano
+            replace frloc with l_frloc, ftranstyp with "S"
+            commit
+            unlock
+            f_fupdate ("A")
+            yrectyp3 = __gccuncap
+         elseif yret = "E"
+            yrectyp3 = __gccautherr
+         else
+            yrectyp3 = __gccspecauth
+         endif
+      endif
+   else
+      yrectyp3 = __gccuncap
+   endif
+endif
+set cursor on
+setcolor (gblueget)
+@ 23, 73 say l_fauthcd3
+setcolor (gbluecolor)
+return .t.
+
+
+******************************
+* check if the 3 payment balance equals the total balance
+******************************
+function rrnca50
+
+return f_valid (iszero (l_famtdue - l_famt1 - l_famt2 - l_famt3), ;
+   "Payments And Total Due Are Not Balanced!!!")
+
+
+******************************
+* F1 help
+******************************
+procedure rrncahlp
+
+private yvar, yscn, ycolor, ycalday, ytmtyp
+yvar = upper (alltrim (readvar ()))
+if yvar $ "L_FDLY;L_FDLYCHG;L_FWKD;L_FWKDCHG;L_FWK;L_FWKCHG;L_FMTH;" + ;
+      "L_FMTHCHG;L_FHR;L_FHRCHG;L_FMLGS;L_FMLGCHG"
+
+*  change time and mileage calc type. and whether to us calendar day
+
+   ycalday = l_fcalday
+   ytmtyp = l_ftmtyp
+   ycolor = setcolor (gsubcolor)
+   yscn = f_box (13, 45, 20, 78)
+
+   @ 14, 47 say "Rate Charge Type............"
+   @ 15, 50 say "1. Daily"
+   @ 16, 50 say "2. Weekend"
+   @ 17, 50 say "3. Weekly"
+   @ 18, 50 say "4. Monthly"
+   @ 19, 47 say "Calendar Day Calculation...."
+
+   setcolor (gsubget)
+   @ 14, 76 say l_ftmtyp pict "9"
+   do while .t.
+      f_getnum (@l_ftmtyp, 14, 76, "", "9")
+      if f_valid (l_ftmtyp >= 1 .and. l_ftmtyp <= 4, "Invalid Entry")
+         exit
+      endif
+   enddo
+   @ 19, 76 say l_fcalday pict "Y"
+   f_getlgc (19, 76, @l_fcalday)
+   setcolor (ycolor)
+   f_restbox (yscn)
+   if ycalday <> l_fcalday .or. ytmtyp <> l_ftmtyp
+      do rrncacal1
+   endif
+elseif yvar = "L_FFUELTOT"
+
+   * display individual exchanged vehicle charge
+
+   f_use ("raagrx", 3)
+   seek l_floc + str (l_frano, 6)
+   if f_valid (found (), "No Exchange Vehicle Records Found!!!")
+      f_pick_f (3, 17, "", "Exch Unit컴횯amage컴컴횲uel", ;
+         "funit+str(fdmgtot,9,2)+str(ffueltot,9,2)","X", ;
+         "floc+str(frano,6)","l_floc+str(l_frano,6)")
+   endif
+   use
+elseif yvar = "L_FDMGTOT"
+
+   * enter damage description
+
+   f_use ("ravm", 1)
+   seek l_funit
+   if found ()
+      ycolor = setcolor (gsubcolor)
+      yscn = f_box (05, 55, 10, 78)
+      l_fdmg1 = fdmg1
+      l_fdmg2 = fdmg2
+      l_fdmg3 = fdmg3
+      @ 06, 57 say "Damage:"
+      setcolor (gsubget)
+      @ 07, 57 say l_fdmg1
+      @ 08, 57 say l_fdmg2
+      @ 09, 57 say l_fdmg3
+      yptr = 1
+      do while .t.
+         do case
+         case yptr = 1
+            f_getfld (@l_fdmg1, 07, 57, "W/N", 0, replicate ("X", 20), .t.)
+         case yptr = 2
+            f_getfld (@l_fdmg2, 08, 57, "W/N", 0, replicate ("X", 20), .t.)
+         case yptr = 3
+            f_getfld (@l_fdmg3, 09, 57, "W/N", 0, replicate ("X", 20), .t.)
+         endcase
+         ykey = lastkey ()
+         if (ykey = 24 .or. ykey = 13) .and. yptr < 3
+            yptr = yptr + 1
+         elseif ykey = 5 .and. yptr > 1
+            yptr = yptr - 1
+         elseif ykey = 27 .or. ykey = 13 .or. ykey = 3 .or. ykey = 18
+            exit
+         endif
+      enddo
+      f_fupdate ("C")
+      reclock ()
+      replace fdmg1 with l_fdmg1, fdmg2 with l_fdmg2, fdmg3 with l_fdmg3
+      commit
+      unlock
+      f_restbox (yscn)
+      setcolor (ycolor)
+   endif
+   select raagr
+elseif yvar $ "L_FCDW;L_FPAI;L_FCDWDAYS;L_FPAIDAYS"
+   * update additional charge
+   do rrnoaget2
+   do rrncacal2
+endif
+
+
+******************************
+* F3 - allow freeseel using supervisor's user account
+******************************
+procedure rrncahlp2
+
+if yfreesell
+   return
+endif
+private yscn, ycolor, yusr, ypass, ysp, ychr
+ycolor = setcolor (gsubcolor)
+yscn = f_box (10, 05, 13, 59)
+@ 11, 07 say "Enter Username With Ability Of Free Sell"
+@ 12, 07 say "Password ..............................."
+yusr = space (3)
+do while .t.
+   if .not. f_getfld (@yusr, 11, 48, "W/N", 3, "!!!")
+      setcolor (ycolor)
+      f_restbox (yscn)
+      return
+   endif
+   f_use ("RAUSR")
+   seek yusr
+   if .not. f_valid (found (), "Invalid User Name!!!")
+      loop
+   endif
+   f_use ("RAGROUP")
+   for n = 0 to 9
+      if str (n, 1) $ rausr->fgroup
+         go (n + 1)
+         if ffreesell
+            yfreesell = .t.
+            exit
+         endif
+      endif
+   next
+   if .not. f_valid (yfreesell, "User Does Not Have Free Sell Right!!!")
+      loop
+   endif
+   use
+   select rausr
+
+   set console off
+   ypass = ""
+   ysp = 48
+   setcolor (gsubget)
+   @ 12, ysp say space (10)
+   do while len (ypass) < 11
+      @ 12, ysp say ""
+      wait to ychr
+      if len (ychr) > 0
+         @ 12, ysp say "X"
+         ysp = ysp + 1
+         ypass = ypass + upper (ychr)
+      else
+         exit
+      endif
+   enddo
+   set console on
+   if .not. f_valid (f_truncate (ypass, len (fpasswd)) = fpasswd, ;
+         "Invalid Password, Please Retry ...")
+      @ 12, 48 say space (10)
+      loop
+   endif
+   select rausr
+   use
+   exit
+enddo
+setcolor (ycolor)
+f_restbox (yscn)
+
+
+******************************
+function rrncaret
+
+parameters xtyp
+
+if .not. yfreesell
+   if lastkey () = 5
+      if xtyp <> 0
+         keyboard chr (5)
+      endif
+   else
+      if xtyp <> 2
+         keyboard chr (13)
+      endif
+   endif
+endif
+return .t.
+
+

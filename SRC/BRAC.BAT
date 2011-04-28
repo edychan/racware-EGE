@@ -1,0 +1,9 @@
+@ECHO OFF
+SET LIB=c:\rac\LIB
+set obj=c:\rac\lib
+cd..\obj
+BLINKER @BRAC
+COPY RAC.EXE C:\RAC\DL-EGE\RACWARE
+DEL RAC.EXE
+cd..\SRC
+

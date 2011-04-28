@@ -1,0 +1,180 @@
+do while .t.
+   xret1 = f_pushmenu (xoption0)
+   if xret1 = 0
+      exit
+   endif
+   xoption1 = substr (goption [xret1], 4)
+   rest from (gmempath+"radbr") additive
+   do case
+   case xret1 = 1
+      f_clrscn ("DAILY BUSINESS REPORT PROCESSING")
+      do rdbr
+   case xret1 = 2
+      f_clrscn ("REPRINT DAILY BUSINESS REPORT")
+      f_use ("radbr")
+      set filter to .not. fglpstd .and. floc $ gusrloc
+      if rdyp1 ()
+         do rdbrr
+      endif
+   case xret1 = 3
+      do rdbrrp
+   case xret1 = 4
+      f_clrscn ("AUDIT DAILY BUSINESS REPORT")
+      f_use ("radbr")
+      set filter to .not. fglpstd .and. floc $ gusrloc
+      if rdyp1 ()
+         do rdbra
+      endif
+   case xret1 = 5
+      if f_valid (gcntl, "Only Central Can Post DBR's")
+         f_clrscn ("POST DAILY BUSINESS REPORT")
+         f_use ("radbr")
+         set filter to .not. fglpstd .and. floc $ gusrloc
+         *if rdyp1 ()
+         *   do rdbrp
+         *endif
+         * post dbr by range
+         l_floc = gloc
+         ydbr1 = 0
+         ydbr2 = 0
+         f_box (03, 10, 09, 50)
+         @ 4,16 say "Location ...... " get l_floc pict [!!!!!!!!!!] valid ;
+                f_valid (l_floc $ gusrloc)
+         @ 5,16 say "Starting DBR .. " get ydbr1 pict [9999] valid ;
+                f_valid (f_verify("radbr",1,l_floc+str(ydbr1,4)))
+         @ 6,16 say "Ending DBR..... " get ydbr2 pict [9999] valid ;
+                f_valid (f_verify("radbr",1,l_floc+str(ydbr2,4)))
+         f_rd ()
+         if f_confirm ("Is this correct [Y/N] ","YN") = "Y"
+            @ 8,16 say "Posting DBR.... "
+            select radbr
+            seek l_floc + str(ydbr1, 4)
+            do while .not. eof () .and. fdbrno >= ydbr1 .and. fdbrno <= ydbr2
+               @ 8,33 say str(fdbrno, 4)
+               if rdbrp ()
+                  select radbr
+                  skip
+               else
+                  f_valid (.f., "Error Found in DBR: "+str(fdbrno,4))
+                  exit
+               endif
+            enddo
+         endif
+      endif
+      close data
+      release all like l_*
+   case xret1 = 6
+      if f_valid (.not. gcntl .and. gsup, "Only Remotes Need To Send DBR's")
+         f_clrscn ("MARK DBR READY TO SEND TO CENTRAL")
+         f_use ("radbr")
+         set filter to .not. fglpstd .and. floc $ gusrloc
+         if rdyp1 ()
+            do rdbrs
+         endif
+      endif
+   endcase
+enddo
+
+release all like l_*
+close database
+
+
+******************************
+function rdyp1
+
+go top
+if eof ()
+   f_valid (.f., "File is Empty ...")
+   return .f.
+endif
+
+l_floc = gloc
+l_fdbrno = 0
+
+@ 02, 02 say "DBR Location " get l_floc pict "!!!!!!!!!!" ;
+   valid f_valid (l_floc $ gusrloc)
+@ 02, 32 say "DBR Number " get l_fdbrno pict "9999"
+if f_rd () = 27
+   return .f.
+endif
+set softseek on
+seek l_floc + str (l_fdbrno, 4)
+if eof ()
+   go bottom
+endif
+set softseek off
+
+if found ()
+   l_floc = radbr->floc
+   l_fdbrno = radbr->fdbrno
+   l_frptdate = frptdate
+else
+   if f_pick_f (02, 3, "", "Loc컴컴컴컴횯BR컴컴Rpt컴컴횫udit컴컴Post", ;
+         "floc+[ ]+str(fdbrno,4)+[ ]+dtoc(frptdate)+[ ]+dtoc(fauddate)+[ ]" + ;
+         "+dtoc(fpost)")
+      l_floc = radbr->floc
+      l_fdbrno = radbr->fdbrno
+      l_frptdate = frptdate
+   else
+      return .f.
+   endif
+endif
+
+yret = f_box (03, 10, 07, 60, "You have selected")
+@ 4,16 say "DBR # ......... " + str(l_fdbrno,4)
+@ 5,16 say "Report Date ... " + dtoc(l_frptdate)
+@ 6,16 say "Location ...... " + l_floc
+if f_confirm ("Is this correct [Y/N] ","YN") = "Y"
+   return .t.
+else
+   return .f.
+endif
+
+************************************************
+function rdbrp
+
+private yok
+
+l_floc = floc
+l_fdbrno = fdbrno
+l_fdbrptdate = frptdate
+l_fperoid = substr(dtoc(l_fdbrptdate),7,2)  + substr(dtoc(l_fdbrptdate),1,2)
+yok = .t.
+
+if notzero(ftotal+fdep-frecv-fprev)
+   f_valid (.f.,"Please reprint DBR after Audits ...")
+   close data
+   return .f.
+else
+   select radbr
+   f_fupdate ("C")
+   reclock ()
+   replace fglpstd with .t.
+   commit
+   unlock
+endif
+
+do rdbrp1 with l_floc, l_fdbrno, yok                     
+
+if yok
+   do rdbrp2                            
+   select radbr
+   f_fupdate ("C")
+   reclock ()
+   replace fpost with date(), fglpstd with .t.
+   commit
+   unlock
+   do rdbrp3                            
+   return .t.
+else
+   select radbr
+   f_fupdate ("C")
+   reclock ()
+   replace fglpstd with .f.
+   commit
+   unlock
+   return .f.
+endif
+
+
+

@@ -1,0 +1,105 @@
+
+Found in line 13 of file RAFUNC.PRG:
+* add f_y2k: convert date to year 2000 format
+
+Found in line 2060 of file RAFUNC.PRG:
+      f_y2k (@ydate)
+
+Found in line 3005 of file RAFUNC.PRG:
+function f_y2k
+
+Found in line 205 of file RAFUNC2.PRG:
+            f_y2k (@l_param1)
+
+Found in line 208 of file RAFUNC2.PRG:
+            f_y2k (@l_param2)
+
+Found in line 211 of file RAFUNC2.PRG:
+            f_y2k (@l_param3)
+
+Found in line 214 of file RAFUNC2.PRG:
+            f_y2k (@l_param4)
+
+Found in line 21 of file RDBR.PRG:
+@ 4,05 say "Enter DBR Report Date  " get yrptdate valid f_y2k (@yrptdate)
+
+Found in line 361 of file RRNCA.PRG:
+@ 4, 36 get l_fdatein valid f_valid (f_y2k(@l_fdatein) .and. l_fdatein >= l_fdateout)
+
+Found in line 146 of file RRNFMU.PRG:
+   @ yln+3, 23 get l_fdatein valid f_valid (f_y2k(@l_fdatein) .and. ;
+
+Found in line 309 of file RRNFMU.PRG:
+   @ 12, 27 get l_fexdate valid f_valid (f_y2k(@l_fexdate) .and. ;
+
+Found in line 1907 of file RRNOA.PRG:
+@ 18, 12 get l_fdateout valid f_valid (.not. empty (l_fdateout).and.f_y2k(@l_fdateout))
+
+Found in line 1910 of file RRNOA.PRG:
+@ 20, 12 get l_fdatein valid f_y2k(@l_fdatein) .and. rrnoa8 ()
+
+Found in line 648 of file RRPT.PRG:
+@ 08, 3 say "From......" get ystart pict "@D" valid f_y2k (@ystart)
+
+Found in line 650 of file RRPT.PRG:
+  f_valid (f_y2k (@yend) .and. yend >= ystart)
+
+Found in line 817 of file RRPT.PRG:
+@ 08, 3 say "From................ " get ystart pict "@D" valid f_y2k (@ystart)
+
+Found in line 818 of file RRPT.PRG:
+@ 09, 3 say "To.................. " get yend pict "@D" valid f_y2k (@yend)
+
+Found in line 1142 of file RRPT.PRG:
+@ 07, 3 say "From......" get ystart pict "@D" valid f_y2k (@ystart)
+
+Found in line 1144 of file RRPT.PRG:
+  f_valid (f_y2k (@yend) .and. yend >= ystart)
+
+Found in line 1352 of file RRPT.PRG:
+@ 07, 03 say "From Date...... " get ystart pict "@D" valid f_y2k (@ystart)
+
+Found in line 1353 of file RRPT.PRG:
+@ 08, 03 say "To Date........ " get yend pict "@D" valid f_y2k (@yend)
+
+Found in line 1615 of file RRPT.PRG:
+@ 08, 03 say "From Date...... " get ystart pict "@D" valid f_y2k (@ystart)
+
+Found in line 1617 of file RRPT.PRG:
+  f_valid (f_y2k (@yend) .and. yend >= ystart)  
+
+Found in line 19 of file RRVCLN.PRG:
+  f_y2k (@ydate)
+
+Found in line 1053 of file RRVFM.PRG:
+if f_valid (f_y2k (@l_fdateout) .and. l_fdays >= 0)
+
+Found in line 1064 of file RRVFM.PRG:
+if f_valid (f_y2k(@l_fdatein) .and. l_fdatein >= l_fdateout)
+
+Found in line 46 of file RRVPJ.PRG:
+   @ 04, 36 get ydate1 valid f_valid (f_y2k (@ydate1) .and. ydate1 >= date ())
+
+Found in line 47 of file RRVPJ.PRG:
+   @ 04, 47 get ydate2 valid f_valid (f_y2k (@ydate2) .and. ydate2 >= ydate1)
+
+Found in line 13 of file RSYSMAOA.PRG:
+   get yclnval valid f_y2k (@yclnval)
+
+Found in line 12 of file RSYSMAVA.PRG:
+   get yclnval valid f_y2k (@yclnval)
+
+Found in line 50 of file RSYSMPU.PRG:
+      f_y2k (@yclnval)
+
+Found in line 54 of file RSYSSSRU.PRG:
+   @ ycnt, 60 get l_fdatefrom valid f_y2k (@l_fdatefrom)
+
+Found in line 82 of file RSYSSSRU.PRG:
+         valid f_valid (f_y2k (@l_fdateto) >= l_fdatefrom .or. empty (l_fdateto))
+
+Found in line 8 of file X.PRG:
+   @ 05, 01 say "Enter date: " get &y valid f_y2k(@x)
+
+Found in line 14 of file X.PRG:
+function f_y2k

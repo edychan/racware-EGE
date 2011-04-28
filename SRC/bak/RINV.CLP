@@ -1,0 +1,16 @@
+rinv
+rivim
+rivsm
+rivpk
+rivpklv
+rivpkpn
+rivpkfm
+rivrs
+rivsc
+rivrc
+rivbc
+rivlf
+rivln
+rivlnlv
+rivlnfm
+

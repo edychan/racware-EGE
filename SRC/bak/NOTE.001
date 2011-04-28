@@ -1,0 +1,19 @@
+Results---
+Customer File   - all appears ok, missing any cc data.
+Addl Driver     - Unknown dates are to be sent as a question mark (?) not 
+"  /  /  ".
+                 -no driver's license info
+RA File -last 6 fields on all records are blank (inlcuding DBR Date/Time Out)
+                 -DBR Date/Time In fields are blank
+                 -all records have a data in but not all have an Employee In
+RA Charge       -all but 3 records are for TIME but in the RA you show 
+charges listed
+                 in the OPT and CVG fields.  Dollar will report these as 
+unbalanced RA's
+                 -GL_Acct Type field is blank.  Dollar may request this be 
+populated.
+                 -Retail Charge field is populated but Retail Rate is 
+always zero.
+                 -Tax and Wholesale Flags are blank
+RA Payment      -no cc data in any record
+                 -blank/unknown dates are to be sent as a question mark (?).
