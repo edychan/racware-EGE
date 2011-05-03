@@ -37,9 +37,15 @@
 * 08.27.08: if fhr > 2 => fdays + 1 (see also rrnec.prg)
 * ------------------------------------------------------------
 * 10.15.08: add add'l charge 5 & 6
-* 10.20.08: add FDUEIN (due in date)
+* 11.15.08: add FDUEIN (due in date)
 *           add early due charge
 *           add late add'l daily charge
+* -------------------------------------------------------------
+* 12.21.09: exclude jet center from [ERC]
+* -----
+* 10.18.10: get user id
+* -----
+* 04.28.11: paperless ra
 * ===========================================================================
 store space (15) to yitem1, yitem2, yitem3, yitem4, yitem5, yitem6   && 10.15.08
 set century on     && 07.09.99
@@ -54,7 +60,10 @@ restore from (gmempath + "RAAGRH") additive
 * --
 l_ftrack = space(70)
 l_fpo = .f.            && fuel purchase option  08/29/94
-l_fsur1tot = 0
+
+l_fsurchg = 0          && 03.10.09
+l_fsurchg1 = 0
+
 l_femail = space(30)   && email address 10.23.01
 
 * --10.15.08
@@ -69,6 +78,16 @@ l_fotax6 = .f.
 l_fotot5 = 0.00
 l_fotot6 = 0.00
 l_fduein = ctod("")
+* --
+
+* --10.18.10: add get user id
+f_use ("rausr")
+if .not. get_usrid (@l_fid2)
+   return
+endif
+select rausr
+use
+@ 01, 70 say "<" + l_fid2 + "/" + gusrid + ">"    && 10.18.10
 * --
 
 if .not. rrnpkra ("O")
@@ -96,8 +115,6 @@ if found ()
    ygwkmax = fwkmax
    ygmthmin = fmthmin
    ygmthmax = fmthmax
-   ygfadlychg = fadlychg
-   ygfadlypct = if (fadlychg > 0,0,fadlypct)     && use amount if present ...
 else
    yggracehr = ggracehr
    yggracefr = ggracefr
@@ -111,8 +128,6 @@ else
    ygwkmax = gwkmax
    ygmthmin = gmthmin
    ygmthmax = gmthmax
-   ygfadlychg = 0          && 11.15.08: just in case
-   ygfadlypct = 0
 endif
 use
 f_getscn ("RRNCA")
@@ -385,16 +400,30 @@ endif
 ******************************
 procedure fgetrrnca
 parameters xnew
-private yedit
+private yedit, yscn, ycolor
 
 if xnew
    if .not. empty (l_fremark)
-      f_valid (.f., l_fremark)
+      ycolor = setcolor (gsubcolor)
+      yscn = f_box (13, 9, 22, 62)
+      * @ 17, 11 say "Remark"
+      setcolor (gsubget)
+      @ 14, 11 say substr(l_fremark,1,50)
+      @ 15, 11 say substr(l_fremark,51,50)
+      @ 16, 11 say substr(l_fremark,101,50)
+      @ 17, 11 say substr(l_fremark,151,50)
+      @ 18, 11 say substr(l_fremark,201,50)
+      @ 19, 11 say substr(l_fremark,251,50)
+      @ 20, 11 say substr(l_fremark,301,50)
+      @ 21, 11 say substr(l_fremark,351,50)
+      setcolor (ycolor)
+      f_popup ("Press Any Key to Continue...", .t.)
+      f_restbox (yscn)
    endif
    l_frloc = gloc
 
    * -- 10.20.08: schedule return date
-   l_fduein = l_fdatein    
+   * l_fduein = l_fdatein   
    l_fdatein = date ()    && actual return date
    * --
 
@@ -403,8 +432,9 @@ if xnew
    l_fmlg = 0
    l_ffuelin = l_ffuelout
    l_femlg = l_femlgin - l_femlgout
-   l_fid2 = gusrid
+   * l_fid2 = gusrid     && 10.18.10: get userid instead of gusrid
 endif
+
 @ 1, 16 say l_frano picture replicate ([9], 6)
 @ 1, 36 say l_flname
 
@@ -421,6 +451,7 @@ endif
 @ 4, 34 get l_fdatein valid f_valid (f_y2k(@l_fdatein) .and. l_fdatein >= l_fdateout)
 @ 4, 45 get l_ftimein picture [99:99] valid rrnca1 ()
 @ 7, 16 say l_funit picture replicate ([!], 10)
+
 @ 8, 16 get l_fmlgin picture replicate ([9], 6) valid rrnca2 ()
 @ 9, 16 say l_fmlgout picture replicate ([9], 6)
 @ 10, 16 say l_fmlg picture replicate ([9], 6)
@@ -580,6 +611,17 @@ private y1, y2, y3, yto, yti, yrtot, yfdays, yfhr
 private ymhr, ytotd, ytotw, ytotm, yrdays, yrwk, yrmlg, yrmlgd, yrmlgw, yrmlgm
 
 f_popup ("Please Wait While Calculating Time & Mileage Charges...", .f.)
+
+* initialize variables
+l_fdly = 0
+l_fwkd = 0
+l_fwkdtot = 0
+l_fdlytot = 0
+l_fwktot = 0
+l_fmthtot = 0
+l_fhrtot = 0
+* --
+
 if l_fcalday
    yto = 0
    yti = 0
@@ -658,40 +700,18 @@ if (l_fhr * l_fhrchg) >= l_fdlychg .and. l_fdlychg > 0
    l_fhr = 0
 endif
 
-* -- 11.01.08: disable weekend rate
-*l_fwkd = 0
-*if l_fwkdday .and. l_fwkdchg > 0.00
-*   if l_fdly >= l_fwkdmin
-*      if l_fdly < l_fwkdmax
-*         l_fwkd = l_fdly
-*         l_fwkdtot = l_fwkdchg * l_fdly
-*         l_fdly = 0
-*         if (l_fhr * l_fhrchg) >= l_fwkdchg
-*            l_fwkd = l_fwkd + 1
-*            l_fhr = 0
-*         endif
-*      else
-*         l_fwkd = l_fwkdmax
-*         l_fdly = l_fdly - l_fwkdmax
-*         l_fwkdtot = l_fwkdchg * l_fwkdmax
-*      endif
-*   elseif l_fdly = (l_fwkdmin - 1) .and. ;
-*         (l_fdly * l_fdlychg + l_fhr * l_fhrchg) >= (l_fwkdmin * l_fwkdchg)
-*      l_fwkd = l_fwkdmin
-*      l_fwkdtot = l_fwkd * l_fwkdchg
-*      l_fdly = 0
-*      l_fhr = 0
-*   endif
-*endif
-
 * -- 11.15.08: check if add'l date rate apply
-l_fwkd = l_fdly - (l_fduein-l_fdateout)
+l_fwkd = 0
+if l_fdatein > l_fduein
+   l_fwkd = l_fdly - (l_fduein-l_fdateout)
+endif
+
 if l_fwkd > 0
    if l_fwkdchg <= 0        && calc add'l date rate if missing ...
-      if ygfadlychg > 0
-         l_fwkdchg = l_fdlychg + ygfadlychg      
+      if gadlychg > 0
+         l_fwkdchg = l_fdlychg + gadlychg      
       else
-         l_fwkdchg = round(l_fdlychg * ygfadlypct / 100, 2)
+         l_fwkdchg = round(l_fdlychg * (1 + gadlypct / 100), 2)
       endif
    endif
    if l_fwkdchg > 0
@@ -700,8 +720,6 @@ if l_fwkd > 0
    else
       l_fwkd = 0
    endif
-else
-   l_fwkd = 0
 endif
 * -- 11.15.08
 
@@ -920,6 +938,43 @@ endif
 l_fhrtot = l_fhr * l_fhrchg
 l_ftmetot = l_fdlytot + l_fwkdtot + l_fwktot + l_fmthtot + l_fhrtot
 
+* --12.21.09: exclude jet center (RA begin with [3]) from [ERC]
+if l_frloc = [EGE] .and. substr(alltrim(str(l_frano)),1,1) = [3]
+   && do not charge [ERC]
+else
+* --11.15.08: check if early rental fee apply by compare to est T&M in open RA
+* if l_ftmechg > l_ftmetot
+* -- 01.12.09: grace = 1 day per allen
+if l_ftmechg - l_ftmetot > l_fdlychg .or. ;
+   l_fduein - l_fdatein >= 2                 && 01.14.09: return >2 days early
+   * -- Apply early rental charge as [ERC]
+   for i = 1 to 6      && add 2 add'l charge
+      ystr1 = "L_FOITEM" + str (i, 1)
+      if  empty(&ystr1) .or. &ystr1 = [ERC]
+         &ystr1 = [ERC ]
+         ystr2 = "L_FORATE" + str(i,1)
+         &ystr2 = l_ftmechg - l_ftmetot
+         exit
+      endif
+   next
+else
+   * -- zero out ERC just in case
+   for i = 1 to 6      && add 2 add'l charge
+      ystr1 = "L_FOITEM" + str (i, 1)
+      if &ystr1 = [ERC]
+         &ystr1 = [ERC ]
+         ystr2 = "L_FORATE" + str(i,1)
+         &ystr2 = 0
+         exit
+      endif
+   next
+endif
+* --
+
+endif
+* --12.21.09
+
+* calculate mileage charge 
 l_fmlgfree = 0
 if l_fwkd > 0
    if l_fwkdmlg = 0
@@ -988,7 +1043,7 @@ for i = 1 to 6      && add 2 add'l charge
    elseif &ystr1 = "SUR1"
       ysurflag = .f.
       ystr1 = "L_FORATE" + str (i, 1)
-      l_fsur1tot = &ystr1
+      * l_fsurchg1 = &ystr1     && 03.10.09: edc
    endif
    *
    if .not. empty(&ystr1)
@@ -1018,14 +1073,14 @@ next
 if .not. empty(gsurchg1) .and. yothcnt <= 6 .and. ysurflag     && -- 10.15.08
    ychg = &gsurchg1
    ystr1 = "L_FOITEM" + str (yothcnt, 1)
-   &ystr1 = "SUR1"     && 08/29/94: fuel purchase option
+   &ystr1 = "SUR1"     
    ystr1 = "L_FODLY" + str (yothcnt, 1)
    &ystr1 = .f.
    ystr1 = "L_FORATE" + str (yothcnt, 1)
    &ystr1 = ychg
    ystr1 = "L_FOTOT" + str (yothcnt, 1)
    &ystr1 = ychg
-   l_fsur1tot = ychg
+   * l_fsurchg1 = ychg    && 03.10.09: edc
    ystr1 = "L_FOTAX" + str (yothcnt, 1)
    &ystr1 = gsurtx1   && 04.30.07
    if &ystr1

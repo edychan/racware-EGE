@@ -960,14 +960,15 @@ ypaiyn = (l_fpai > 0.00)
    valid f_valid (.not. empty (l_flic))
 @ 6, 36 get l_flicst picture [!!] valid f_valid (.not. empty (l_flicst))
 @ 7, 12 get l_flicexp valid ;
-   f_valid (f_expdate (l_flicexp), "Warning! Driver License Expired!!!")
+   f_valid (f_expdate (l_flicexp), "Warning: Driver License Expired!")
 @ 7, 36 get l_fdob valid rrnoa2 ()
 @ 8, 12 get l_fcrpno picture replicate ([!], 15) valid rrnoa4 ()
 @ 9, 12 get l_fcrpnm
 @ 10, 12 get l_fcrpph picture [999-999-9999]
 * 10.23.01: add email
 @ 11, 01 say "Email ...."
-@ 11, 12 get l_femail
+@ 11, 12 get l_femail valid ;
+   f_valid (f_goodem(l_femail), "Please enter a valid email!")     && 05.03.91:
 @ 12, 12 get l_flocal1
 @ 12, 33 get l_flocal2 
 @ 13, 12 get l_finsur1 

@@ -44,6 +44,12 @@
 * 12.21.09: exclude jet center from [ERC]
 * -----
 * 10.18.10: get user id
+* -----
+* 04.28.11: paperless ra
+* 1. mandatory email
+* 2. prompt with current email after confirm before save
+* 3. do not print close ra, instead prompt
+* 4. if no, save ra and exit
 * ===========================================================================
 store space (15) to yitem1, yitem2, yitem3, yitem4, yitem5, yitem6   && 10.15.08
 set century on     && 07.09.99
@@ -162,7 +168,29 @@ do while .t.
          endif
          do case
          case ykey = "C"
-            if f_confirm ("Do you want to print contract? ", "YN") = "Y"
+
+         * -- 05.03.11: default is to send close ra as email
+         clear gets
+         setcolor (gsubcolor)
+         yscn = f_box (13, 10, 16, 73)
+         @ 14, 11 say "email:"
+         @ 14, 18 get l_femail picture replicate ("x", 50) ;
+            valid f_valid (f_goodem (l_femail, .t.), "Invalid email address ...")    && [NA] is valid email 
+         f_rd ()   
+         * update gempath+"ramsg.dbf"
+         yfil = gempath + "ramsg.dbf"
+         if file (yfil)
+            select 0
+            use &yfil
+            reclock ()
+            append blank
+            f_replace ()
+         endif
+         f_restbox (yscn)
+         setcolor (gbluecolor)
+		 * -- 05.03.11 
+
+		 if f_confirm ("Do you want to print contract? ", "YN") = "Y"
                * y2k
                set century off
                do rrnprt with "I"

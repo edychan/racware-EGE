@@ -17,6 +17,8 @@
 * f_edit: year 2000
 * ---------------------------------------------------
 * 12.22.09: move block_rate from rrvfm to rafunc
+* -------------
+* 05.03.11: add f_goodem to validate email
 * ===========================================================================
 * function f_popup ::= popup system message on line 24.
 * parameters xmessage ::= system message
@@ -3069,6 +3071,39 @@ if year (xdate) <= 1920
    ydate = dtoc(xdate)
    xdate = ctod(substr(ydate,1,6)+"20"+substr(ydate,7,2))
 endif
+return .t.
+
+* ------------------------------------
+* validate email:
+*   xemail: email addr
+*   xedit: if .t. => allow NA as valid 
+* 1. not empty
+* 2. /\A[\W+\-.]+@[a-Z\d\-.\.[a-Z]+\Z/
+* -------------------------------------
+function f_goodem
+parameter xemail, xedit
+
+if pcount () = 1
+   xedit = .t.
+endif 
+   
+* special case:
+if xedit .and. upper(trim(xemail)) == "NA"     && not applicable 
+   return .t.
+endif   
+
+if empty(xemail)
+   return .f.
+endif
+
+* standard check
+do case
+case at ("@", xemail) = 0
+   return .f.
+case at (".", xemail) = 0
+   return .f.
+endcase
+
 return .t.
 
 **********************************

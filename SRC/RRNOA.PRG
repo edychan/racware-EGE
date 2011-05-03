@@ -76,6 +76,10 @@
 * 12.22.09: implement block rate function
 * --
 * 10.18.10: get user id
+* --
+* 04.28.11: paperless ra
+*   1. mandatory email field (NA => not applicable)
+*   2. Add email validate (rafunc)               
 * ===========================================================================
 f_clrscn ("Open Rental Agreement")
 f_popup ("Please Wait...")
@@ -2210,7 +2214,7 @@ procedure fgetrrnoa
 @ 10, 12 get l_fcrpph picture [999-999-9999]
 * 10.23.01: add email address
 @ 11, 01 say "Email ...."
-@ 11, 12 get l_femail
+@ 11, 12 get l_femail valid f_goodem (l_femail, .t.)     && 04.28.11: allow [NA] as valid email
 
 @ 12, 12 get l_flocal1
 @ 12, 33 get l_flocal2 

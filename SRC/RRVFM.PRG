@@ -781,18 +781,18 @@ set key -2 to
 set key 1 to
 
 ******************************
-function good_email
-parameters xemail
-
-do case
-case empty(xemail)
-   return .f.
-case at ("@", xemail) = 0
-   return .f.
-otherwise
-   return .t.
-endcase
-
+* -- replace with f_goodem in rafunc
+*function good_email
+*parameters xemail
+*
+*do case
+*case empty(xemail)
+*   return .f.
+*case at ("@", xemail) = 0
+*   return .f.
+*otherwise
+*   return .t.
+*endcase
 
 ******************************
 procedure rrvfmsm
@@ -2062,7 +2062,7 @@ yemail = rares->femail
 @ 14, 11 say "Email:"
 do while .t.
    @ 14, 18 get yemail picture replicate ("x", 50) ;      && 10.18.10 increase to 50
-      valid f_valid (good_email (yemail), "Invalid email address ...")
+      valid f_valid (f_goodem (yemail, .f.), "Invalid email address ...")   && cannot enter NA as valid email
    if f_rd () = 27
       exit
    endif

@@ -68,12 +68,12 @@ do while .t.
       case ykeyin = "E"
          clear gets
          setcolor (gsubcolor)
-         yscn = f_box (13, 14, 16, 63)
+         yscn = f_box (13, 10, 16, 73)
          yemail = raagrh->femail
-         @ 14, 16 say "email ....."
+         @ 14, 11 say "email:"
          do while .t.
-         @ 14, 28 get yemail picture replicate ("x", 30) ;
-            valid f_valid (good_email (yemail), "Invalid email address ...")
+         @ 14, 18 get yemail picture replicate ("x", 50) ;                          && increase to 50
+            valid f_valid (f_goodem (yemail, .f.), "Invalid email address ...")     && cannot enter NA as valid email
          if f_rd () = 27
             exit
          endif
