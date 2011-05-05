@@ -3082,6 +3082,7 @@ return .t.
 * -------------------------------------
 function f_goodem
 parameter xemail, xedit
+private yok
 
 if pcount () = 1
    xedit = .t.
@@ -3097,14 +3098,44 @@ if empty(xemail)
 endif
 
 * standard check
+yok = .t.
 do case
 case at ("@", xemail) = 0
-   return .f.
+   yok = .f.
 case at (".", xemail) = 0
-   return .f.
+   yok = .f.
+otherwise
+   * check valid domain
+   ystr = substr(xemail,at("@",xemail)+1)    && xxx@xxx.domain
+   if at(".", ystr) = 0
+      yok = .f.
+   else
+      yok = .f.
+      if ".com" $ ystr
+	     yok = .t.
+      elseif ".net" $ ystr		 
+	     yok = .t.
+      elseif ".org" $ ystr		 
+	     yok = .t.
+      elseif ".gov" $ ystr		 
+	     yok = .t.
+      elseif ".mil" $ ystr		 
+	     yok = .t.
+      elseif ".edu" $ ystr		 
+	     yok = .t.
+      elseif ".biz" $ ystr		 
+	     yok = .t.
+      elseif ".mob" $ ystr		 
+	     yok = .t.
+      elseif ".pro" $ ystr		 
+	     yok = .t.
+      elseif ".int" $ ystr		 
+	     yok = .t.
+	  endif	  
+   endif	  
 endcase
 
-return .t.
+return yok
 
 **********************************
 * check system message ...

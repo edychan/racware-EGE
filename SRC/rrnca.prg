@@ -68,7 +68,7 @@ l_fpo = .f.            && fuel purchase option  08/29/94
 l_fsurchg = 0          && 03.10.09
 l_fsurchg1 = 0
 
-l_femail = space(30)   && email address 10.23.01
+l_femail = space(50)   && 5.03.11: email address 
 
 * --10.15.08
 l_foitem5 = [    ]
@@ -174,12 +174,20 @@ do while .t.
          setcolor (gsubcolor)
          yscn = f_box (13, 10, 16, 73)
          @ 14, 11 say "email:"
-         @ 14, 18 get l_femail picture replicate ("x", 50) ;
-            valid f_valid (f_goodem (l_femail, .t.), "Invalid email address ...")    && [NA] is valid email 
-         f_rd ()   
+         do while .t.
+            @ 14, 18 get l_femail picture replicate ("x", 50) ;
+               valid f_valid (f_goodem (l_femail, .t.), "Invalid email address ...")    && [NA] is valid email 
+            if f_rd () = 27
+			   f_valid (.f., "Please enter a valid email or NA")
+		       loop
+		    else
+               exit
+            endif			
+		 enddo	
+		 
          * update gempath+"ramsg.dbf"
          yfil = gempath + "ramsg.dbf"
-         if file (yfil)
+         if file (yfil) .and. len(trim(l_femail)) > 2     && only send with a valid email
             select 0
             use &yfil
             reclock ()

@@ -3,6 +3,11 @@
 * ra check in by remote handheld
 *
 * 01.24.07: record rental hr in raagrh (frhr)
+* ----------
+* 05.04.11: paperless ra changes
+*   - add email to transit RA; add FEMAIL (C 30) to RAAGRT.DBF
+*   - allow changes to email during audit; add L_FEMAIL to FSCREEN.DBF 
+*   - process transit to netmail server (rrnrmt3)
 * =====================================
 do while .t.
    xret2 = f_pushmenu (xoption1)
@@ -202,6 +207,19 @@ f_use ("raagrh")
 f_use ("raagrx", 3)
 f_use ("racred")
 f_use ("rares")
+
+* --05.04.11: email close ra
+yfil = gempath + "ramsg.dbf"
+if file (yfil) 
+   select 0
+   use &yfil alias ramsg
+else
+   f_valid (.f., "Error: Cannot Locate Email Server!")
+   close data
+   return
+endif
+* --
+
 f_box (06, 05, 22, 65, "Processing Transit RA")
 yrow = 6
 select raagrt
@@ -357,6 +375,14 @@ do while .not. eof ()
       f_fupdate ("A")
    endif
 
+   * --05.04.11: update gempath+"ramsg.dbf"
+   if len(trim(l_femail)) > 2     && only send with a valid email exclude [NA]
+      select ramsg
+      append blank
+      f_replace ()
+   endif
+   * --05.04.11
+   
    * blank out raagr
    select raagr
    f_clrrec ()
