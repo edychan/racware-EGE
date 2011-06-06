@@ -1557,6 +1557,8 @@ if f_valid (f_getrate (l_frate, l_floc, l_fclass, l_fdateout), ;
    else
       l_fwkdchg = round(fdlychg * (1 + gadlypct / 100), 2)
    endif
+   * 06.01.2011: set add'l day mileage = daily allow mileage
+   l_fwkdmlg = l_fdlymlg
    * --
    l_fwkchg = rartm->fwkchg
    l_fwkmlg = rartm->fwkmlg
@@ -2214,7 +2216,8 @@ procedure fgetrrnoa
 @ 10, 12 get l_fcrpph picture [999-999-9999]
 * 10.23.01: add email address
 @ 11, 01 say "Email ...."
-@ 11, 12 get l_femail valid f_goodem (l_femail, .t.)     && 04.28.11: allow [NA] as valid email
+@ 11, 12 get l_femail picture replicate ([x],38) valid ;
+  f_goodem (l_femail, .t.)     && 04.28.11: allow [NA] as valid email
 
 @ 12, 12 get l_flocal1
 @ 12, 33 get l_flocal2 
@@ -2318,7 +2321,7 @@ setcolor (gblueget)
 @ 8, 12 say l_fcrpno
 @ 9, 12 say l_fcrpnm
 @ 10, 12 say l_fcrpph
-@ 11,12 say l_femail           && 10.23.01: add email
+@ 11,12 say substr(l_femail,1,38)           && 10.23.01: add email
 @ 12, 12 say l_flocal1
 @ 12, 33 say l_flocal2
 @ 13, 12 say l_finsur1

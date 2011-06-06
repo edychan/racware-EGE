@@ -3106,30 +3106,30 @@ case at (".", xemail) = 0
    yok = .f.
 otherwise
    * check valid domain
-   ystr = substr(xemail,at("@",xemail)+1)    && xxx@xxx.domain
+   ystr = upper(substr(xemail,at("@",xemail)+1))    && xxx@xxx.domain
    if at(".", ystr) = 0
       yok = .f.
    else
       yok = .f.
-      if ".com" $ ystr
+      if ".COM" $ ystr
 	     yok = .t.
-      elseif ".net" $ ystr		 
+      elseif ".NET" $ ystr		 
 	     yok = .t.
-      elseif ".org" $ ystr		 
+      elseif ".ORG" $ ystr		 
 	     yok = .t.
-      elseif ".gov" $ ystr		 
+      elseif ".GOV" $ ystr		 
 	     yok = .t.
-      elseif ".mil" $ ystr		 
+      elseif ".MIL" $ ystr		 
 	     yok = .t.
-      elseif ".edu" $ ystr		 
+      elseif ".EDU" $ ystr		 
 	     yok = .t.
-      elseif ".biz" $ ystr		 
+      elseif ".BIZ" $ ystr		 
 	     yok = .t.
-      elseif ".mob" $ ystr		 
+      elseif ".MOB" $ ystr		 
 	     yok = .t.
-      elseif ".pro" $ ystr		 
+      elseif ".PRO" $ ystr		 
 	     yok = .t.
-      elseif ".int" $ ystr		 
+      elseif ".INT" $ ystr		 
 	     yok = .t.
 	  endif	  
    endif	  

@@ -21,6 +21,8 @@
 * 02.02.10: mgmt_7: display yield as 99.99
 * 04.30.10: mgmt_7: setup RCP
 * 05.06.10: mgmt_7: change commission % for CDW, RCP & Travel guide
+* --
+* 06.01.11: mgmt_7: ra prefix=1 => 1 and 2 combined totals
 * ===========================================================================
 private yret, yfile, i, yfld, ytitle, ycond, yopt, yfilter
 
@@ -1354,6 +1356,8 @@ use
 * 12.02.09: add 3 add'l charge code
 * 12.09.09: take out yxxx 
 * --
+* 06.01.11: ra prefix =1 => 1 and 2 combined
+* --
 procedure mgmt_7
 private yret, yfile, i, yfld, ytitle, ycond, yopt, yfilter, ydetail,ydays
 private ystart, yend, ycode, ytnm, yfnd, ystatus, yln, ylcnt, ydisp, ylogic
@@ -1639,7 +1643,13 @@ do while fdatein <= yend .and. .not. eof ()
    * ? recno()  && debug
 
    * --11.13.09
-   if yseq > 0
+   if yseq = 1     && 06/01/11: => 1 and 2
+      ii = val(substr(str(frano,6),1,1))
+      if ii < 1 .or. ii > 2    && 1 and 2
+         skip
+         loop
+      endif
+   elseif yseq > 1
       if val(substr(str(frano,6),1,1)) <> yseq
          skip
          loop

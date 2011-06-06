@@ -967,7 +967,7 @@ ypaiyn = (l_fpai > 0.00)
 @ 10, 12 get l_fcrpph picture [999-999-9999]
 * 10.23.01: add email
 @ 11, 01 say "Email ...."
-@ 11, 12 get l_femail valid ;
+@ 11, 12 get l_femail picture replicate ([x], 38) valid ;
    f_valid (f_goodem(l_femail), "Please enter a valid email!")     && 05.03.91:
 @ 12, 12 get l_flocal1
 @ 12, 33 get l_flocal2 
