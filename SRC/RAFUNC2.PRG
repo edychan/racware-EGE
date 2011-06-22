@@ -20,12 +20,14 @@
 * 07.01.99: set century on
 * 12.07.04: fix window xp printing problem
 * 03.13.08: add "T" keyword to print distinct rows
+* ---
+* 06.21.11: add email function 
 * ===========================================================================
 
 function f_rr
 
 parameters xrptname, xtitle
-private i, j, k, yret, ynewpage
+private i, j, k, yret, ynewpage, yrptname
 
 f_use ("rarpt", 1)
 seek f_truncate (xrptname, 15)
@@ -34,9 +36,17 @@ if .not. f_valid (found (), "Missing Report " + xrptname)
 endif
 
 l_outopt = " "
+yrptname = rarpt->ftitle
 f_box (02, 05, 04, 78, "You have selected")
 @ 03, 07 say rarpt->fname + [ -> ] + rarpt->ftitle
-l_outopt = f_confirm ("[D]isplay on Screen  [P]rint  [F]ile  [Q]uit", "DPFQ")
+
+* 06.21.11: add email report function
+if gemrpt
+   l_outopt = f_confirm ("[D]isplay on Screen  [P]rint  [F]ile  [E]mail  [Q]uit", "DPFEQ")    && add email
+else
+   l_outopt = f_confirm ("[D]isplay on Screen  [P]rint  [F]ile  [Q]uit", "DPFQ")    
+endif
+* --06.21.11
 
 if l_outopt = "Q"
    return 0
@@ -58,6 +68,27 @@ do while l_outopt = "F"
       endif
    endif
 enddo
+
+yemail = f_truncate(gemail,40)
+* -- add email function: 06.21.11
+do while l_outopt = "E"
+   @ 07, 00
+   @ 07, 05 say "email: " get yemail pict replicate ("x", 40) valid ;
+     f_valid (f_goodem (yemail, .f.), "Invalid email address ...")     && cannot enter NA as valid email 
+   if f_rd() = 27
+      return 0
+   else
+      ykeyin = f_confirm ("Is this correct [Y/N/Q] ", "YNQ")
+      if ykeyin = "Y"
+         @ 07, 00
+		 l_filename = gempath + "rr"+strtran(time(),":","")+".txt"
+         exit
+      elseif ykeyin = "Q"
+         return 0
+      endif
+   endif
+enddo
+* --
 
 for n = 1 to fcount ()
    xfld = field (n)
@@ -252,6 +283,25 @@ if l_foutopt = "D"
    yfile = gstnpath + "rrout.rpt"
    run racbrow &yfile
    setcolor (gbluecolor)
+elseif l_foutopt = "E"      &&  add email report function
+   * --06.21.11
+   yfil = gempath + "emrpt.dbf"
+   if file (yfil)
+      select 0
+      use &yfil
+      reclock ()
+      append blank
+      replace femail with yemail, freport with yrptname
+	  replace ffile with substr(l_filename, at("rr", l_filename))     && i.e. rr123456.txt
+      commit
+      unlock
+      use
+      f_valid (.f., "Email is now in the message queue ...")
+   else
+      f_valid (.f., "Email is not setup ...")
+   endif
+   
+   * --
 endif
 
 return yret
@@ -827,7 +877,7 @@ if .not. f_valid (.not. eof (), "Empty Selection ...")
 endif
 
 f_popup ("Creating Report ...")
-if l_foutopt $ "DF"
+if l_foutopt $ "DEF"        && 06.21.11: add Email
    if empty(l_filename)
       yfil = gstnpath + "rrout.rpt"
    else

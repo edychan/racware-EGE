@@ -7,3 +7,6 @@ misc/
 webapp/
 RES/
 *.doc
+netmail/*.EXE
+netmail/*.OBJ
+netmail/*.BIF

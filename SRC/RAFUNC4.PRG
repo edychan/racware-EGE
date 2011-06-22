@@ -150,6 +150,10 @@ if yok
    else
       @ 14,40 say "Good Morning, "+ ffname
    endif
+   * --06.21.11: add email report function
+   gemail = if (type("femail")="U", "", trim(femail))
+   gemrpt = if (type("femrpt")="U", .f., femrpt)
+   * --06.21.11
    gusrid = fid
    gusrgp = alltrim (fgroup)
    f_use ("RAGROUP")

@@ -11,6 +11,8 @@
 * 3. modify rezmsg.dbf (add fstatus, fcxldate, freschg and fccinfo
 * ---------------------------------------------------------------------
 * 02.15.11: correct Eagle phone #
+* -----------
+* 06.21.11: add email report function
 * =====================================================================
 clear
 set delete on
@@ -20,7 +22,64 @@ do makrez
 
 do makagr
 
+do makrep         && email report function
+
 close all
+
+* =====================================================================
+* 06.21.11: add email report function
+procedure makrep
+yfil = "emrpt.dbf"
+if .not. file (yfil)
+   return
+endif
+
+select 0
+use &yfil alias rep
+go top
+if eof ()
+   return
+endif
+
+? "Start processing Report email queue ..." + str(reccount())
+yfil = "rarep.txt"
+set device to print
+set printer to &yfil
+setprc (0,0)
+
+* -- write header
+yln = 0
+@yln, 0 say [to,from,report,attachment]        
+yln = yln + 1
+
+yfrom = "dollar.ege.manager@centurytel.net"
+select rep
+do while .not. eof () 
+
+   yto = trim(rep->femail)
+   yreport = trim(rep->freport)
+   yfile = trim(rep->ffile)   
+
+   yfld = ["] + yto + ["] + [,] + ;
+          ["] + yfrom + ["] + [,] + ;
+          ["] + yreport + ["] + [,] + ;
+          ["] + yfile + ["] 
+
+   @yln, 0 say yfld
+   yln = yln + 1
+   rlock ()
+   delete
+   skip
+enddo
+
+set printer to
+set console on
+set print off
+set device to screen
+
+? "Complete processing Report queue ..."
+?
+?
 
 * =====================================================================
 procedure makagr

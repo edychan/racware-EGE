@@ -15,10 +15,15 @@
 * 06.15.09: add racemail path -> netmailbot
 *           default::= \RACWARE\NETMAIL
 * 12.04.09: add guppct::=UpSell % (RALOC.DBF)
+* -------
+* 06.21.11: add email report function
 * ===========================================================================
 public gstation, gdbfpath, gmempath, gstnpath, gmsgpath, gcompath
 public gsynpath     && 05.05.09
 public gempath      && 06.15.09  
+* --06.21.11
+public gemail, gemrpt
+* --
 public gsuppath, gsupmpath
 public gdbffiles, gstnfiles, gcclog, gusrid, gusrgp, gsup, gcntl
 public gmesscolor, gbluecolor, gblueget, gmenuback, glgincolor
