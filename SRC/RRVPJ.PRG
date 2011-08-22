@@ -18,6 +18,7 @@
 * 12.01.06: provide option to include ON HOLD units
 * -------------------------------------------------
 * 04.13.11: add File option
+* 06.21.11: add email report option
 * ===========================================================================
 f_clrscn ("Reservation Projection Report")
 setcolor (gsubcolor)
@@ -84,12 +85,17 @@ do while .t.
    next
    f_rd ()
    set century off
-   ydisp = f_confirm ("[D]isplay  [F]ile  [P]rint   [E]dit   [Q]uit", "EDFPQ")
+   * --06.21.11: add email option
+   if gemrpt
+      ydisp = f_confirm ("[D]isplay  [F]ile  [P]rint   [E]dit   [S]end   [Q]uit", "DFPESQ")
+   else
+      ydisp = f_confirm ("[D]isplay  [F]ile  [P]rint   [E]dit   [Q]uit", "DFPEQ")
+   endif
    if ydisp = "Q"
       close databases
       return
    endif
-   if ydisp $ "DFP"
+   if ydisp $ "DFPS"
       exit
    endif
 enddo
@@ -100,16 +106,32 @@ if yonhold        && 12.01.06
 else
    ycond = [AIX]
 endif  
-f_popup ("Please Wait...", .f.)
 
+private yrptname, yemail, yffile
+yrptname = "Reservation Projection Report"
 * --04.13.11
 if ydisp = "F"
-   yfil = gstnpath + "res_proj.rpt"
+   yffile = gstnpath + "res_proj.rpt"
+elseif ydisp = "S"
+   yffile = gempath + "rr"+strtran(time(),":","")+".txt"
+   yscn = f_box (13, 10, 16, 73)
+   yemail = f_truncate(gemail, 40)
+   @ 14, 11 say "Email:"
+   do while .t.
+      @ 14, 18 get yemail picture replicate ("x", 40) ;     
+         valid f_valid (f_goodem (yemail, .f.), "Invalid email address ...")   && cannot enter NA as valid email
+      if f_rd () = 27
+         close databases
+		 return
+     else
+         exit	 
+     endif
+   enddo
 else
-   yfil = gstnpath + "rrout.rpt"
+   yffile = gstnpath + "rrout.rpt"
 endif
 * --
-
+f_popup ("Please Wait...", .f.)
 f_use ("raagr")
 
 f_use ("ravm")
@@ -390,8 +412,8 @@ if ydisp = "P"
 endif
 yline = 0
 ypage = 0
-if ydisp $ "D;F"
-   set printer to &yfil
+if ydisp $ "D;F;S"           && 06.22.11: email option
+   set printer to &yffile
    set device to print
 else
    set device to print
@@ -399,7 +421,7 @@ endif
 setprc (0,0)
 for n = 0 to (ydate2 - ydate1)
    for n1 = 1 to 2
-      if ynum <= 20 .or. ydisp $ "D;F"
+      if ynum <= 20 .or. ydisp $ "D;F;S"      && 06.22.11
          if yline > 52
             if ydisp = "P"
                eject
@@ -579,7 +601,15 @@ f_popback()
 if ydisp = "D"
    set color to
    clear
-   run racbrow &yfil
+   run racbrow &yffile
+elseif ydisp = "S"
+   * --06.21.11
+   if f_sndrep (yemail, yrptname, substr(yffile, at("rr", yffile)))    && i.e. rr123456.txt
+      f_valid (.f., "Email is now in the message queue ...")
+   else
+      f_valid (.f., "Email is not setup ...")
+   endif
+   * --   
 endif
 
 close database

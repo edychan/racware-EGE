@@ -47,6 +47,11 @@
 * ---------------------------------------------------------------------------
 * 11.08.10: add/update res -> send as email
 * 11.08.10: NS/CXL special handling e.g. charges, remarks, cxl & email date 
+* ---------------------------------------------------------------------------
+* 08.21.11: use dollar convention
+*   i.e. 9 days = 1 week + 2 extra day (not daily rate which is usually weekly/4 )
+*        note: extra day is stored as fxdlychg (*new field) 
+*        see function rrvestchg
 * ===========================================================================
 
 parameters xtyp
@@ -1583,8 +1588,8 @@ if f_valid (f_getrate (l_fcode, l_floc, l_fclass, l_fdateout), ;
       @ 7, 64 say l_fmthmlg picture [9999]
       @ 8, 56 say l_fhrchg  picture [9999.99]
       @ 9, 56 say l_fmlgchg picture [9999.99]
-      @ 10, 60 say l_fwkdmin picture [99]
-      @ 10, 68 say l_fwkdmax picture [99]
+      * @ 10, 60 say l_fwkdmin picture [99]          && 08.21.11: min/max not applicable anymore....
+      * @ 10, 68 say l_fwkdmax picture [99]
       setcolor (gbluecolor)
       yrate = l_fcode
       yclass = l_fclass
@@ -1892,6 +1897,10 @@ setcolor (gbluecolor)
 return .t.
 
 * ==================================
+* 08.21.11: use dollar convention
+*   i.e. 9 days = 1 week + 2 extra day (not daily rate which is usually weekly/4 )
+*        note: extra day is stored as fxdlychg (*new field) 
+* --
 function rrvestchg
 
 private y1, y2, y3, yto, yti, yrtot, yfdays, yfhr
@@ -1925,77 +1934,34 @@ l_fdly = yydays
 l_fcdwdays = ydaychg     && use by surchg formaula
 l_fpaidays = ydaychg
 
-if (l_fhr * l_fhrchg) >= l_fdlychg .and. l_fdlychg > 0
-   l_fdly = l_fdly + 1
-   l_fhr = 0
-endif
-
-store 99999.99 to ytotd, ytotw, ytotm, yrtot
-
-yfdays = l_fdly
-yfhr = l_fhr              && save for week/month calc.
-
-* estimate daily chg 01/07/95:(edc)
-if l_fdlychg > 0.00
-   ytotd = l_fdly * l_fdlychg + l_fhr * l_fhrchg 
-   yrtot = ytotd
-endif
-
-yrdays = l_fdly
-yrhr = l_fhr
-* estimate weekly chg
-l_fwk = 0
-if l_fwkchg > 0.00     
-   * --02.20.09     
-      l_fwk = int (yfdays/7)
-      l_fdly = yfdays - l_fwk * 7
-      l_fhr = yfhr
-      if l_fdly * l_fdlychg + l_fhr * l_fhrchg > l_fwkchg
-         l_fwk = l_fwk + 1
-         l_fdly = 0
-         l_fhr = 0
-      endif
-      if l_fdly > 0 .and. l_fdlychg <= 0
-         l_fwk = l_fwk + 1
-         l_fdly = 0
-         l_fhr = 0
-      endif
-      if l_fwk > 0
-         ytotw = l_fwk * l_fwkchg + l_fdly * l_fdlychg +   ;
-                 l_fhr * l_fhrchg 
-         if ytotw > ytotd
-            l_fwk = 0
-            l_fdly = yrdays 
-            l_fhr = yrhr
-         else
-            yrtot = ytotw
-         endif
-      else
-         * restore old values
-         l_fdly = yrdays 
-         l_fhr = yrhr
-      endif
-
-   * --02.20.09
-   l_fwktot = l_fwkchg * l_fwk
+* --08.21.11: USE extra day rate from dollar res if available if rental days > 7 days
+l_fwktot = 0
+l_fdlytot = 0
+l_fhrtot = 0
+if l_fdly > 4 .and. l_fwkchg > 0                           && monthly rate not include in the estimate ...
+   ydlychg = if(l_fxdlychg > 0, l_fxdlychg, l_fdlychg)     && use extra daily rate if available
+   l_fwk = int (l_fdly/7)
+   l_fwktot = l_fwk * l_fwkchg
+   l_fdly = l_fdly - l_fwk * 7
+   l_fdlytot = l_fdly * ydlychg
+   l_fhrtot = l_fhr * l_fhrchg   
+   l_fhrtot = if(l_fhrtot > ydlychg, ydlychg, l_fhrtot)
 else
-   l_fwktot = 0.00
+   ydlychg = l_fdlychg                                     && use regular daily rate
+   l_fdlytot = l_fdly * ydlychg
+   l_fhrtot = l_fhr * l_fhrchg   
+   l_fhrtot = if(l_fhrtot > ydlychg, ydlychg, l_fhrtot)
 endif
+* -- 08.21.11: 
 
-
-if l_fdlychg > 0.00
-   l_fdlytot = l_fdlychg * l_fdly
-elseif l_fwkchg > 0.00
-   if l_fdly > 0      
-      l_fwk = l_fwk + 1
-      l_fwktot = l_fwktot + l_fwkchg
-      l_fdly = 0
-      l_fhr = 0 
-   endif
-endif
-l_fhrtot = l_fhr * l_fhrchg
-l_ftmetot = l_fdlytot + l_fwktot + l_fhrtot
+l_ftmetot = l_fwktot + l_fdlytot + l_fhrtot
 l_fmlgtot = 0
+
+*? l_fwktot
+*? l_fdlytot
+*? l_fhrtot
+*? l_ftmetot
+*inkey(0)
 
 * -- variables used by surcharge formula
 l_fmlgtot = 0
@@ -2080,15 +2046,17 @@ do while .t.
       yfil = gempath + "rezmsg.dbf"
       if file (yfil)
          ydays = l_fdatein - l_fdateout
+         * 08.22.11: send extra day rate if available
+		 ydlychg = if(l_fxdlychg > 0, l_fxdlychg, l_fdlychg)
          do case
          case ydays > 4 .and. l_fwkchg > 0
 		    if l_fwkmlg > 0 .or. l_fdlymlg > 0
-               yrate = [$ ] + alltrim(str(l_fdlychg,8,2)) + [ per day. ] + ;
+               yrate = [$ ] + alltrim(str(ydlychg,8,2)) + [ per day. ] + ;
 					   [$ ] + alltrim(str(l_fwkchg,8,2)) + [ per week. ] + ;
 			           [Includes ]+str(l_fdlymlg,3)+[ free miles per day with a ] + ;
                        str(l_fmlgchg,4,2)+[ per mile charge for extra miles.]					   
 			else
-               yrate = [$ ] + alltrim(str(l_fdlychg,8,2)) + [ per day. ] + ;
+               yrate = [$ ] + alltrim(str(ydlychg,8,2)) + [ per day. ] + ;
 			           [$ ] + alltrim(str(l_fwkchg,8,2)) + [ per week. Unlimited mileage.]
 			endif 
          otherwise

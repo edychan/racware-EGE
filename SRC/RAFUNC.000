@@ -15,6 +15,10 @@
 * add dispmsg: display system message (F6)
 * 10.26.98
 * f_edit: year 2000
+* ---------------------------------------------------
+* 12.22.09: move block_rate from rrvfm to rafunc
+* -------------
+* 05.03.11: add f_goodem to validate email
 * ===========================================================================
 * function f_popup ::= popup system message on line 24.
 * parameters xmessage ::= system message
@@ -913,7 +917,6 @@ next
 commit
 unlock
 
-
 ******************************
 function f_clrskip
 
@@ -940,6 +943,34 @@ return (yrec2)
 
 
 ******************************
+* 02.06.07: delete & skip
+function f_delskip
+
+parameter xfunc
+
+private yrec1, yrec2
+yrec1 = recno ()
+skip 1
+if eof ()
+   yrec2 = 0
+else
+   yrec2 = recno ()
+endif
+go (yrec1)
+if pcount () < 1
+   reclock ()
+   delete
+   commit
+   unlock
+else
+   do &xfunc
+endif
+if yrec2 > 0
+   go (yrec2)
+endif
+return (yrec2)
+
+******************************
 function f_matchsec
 
 parameter xstr1, xstr2
@@ -962,11 +993,14 @@ private xsel, xftitle, xcnt, xpick, xopick, xs_row, xs_col, xkey
 private xafoptdesc [9], ymuquit, ysecurity [9], ysec
 
 f_rstscn ()
-set key -5 to dispmsg
-set key -6 to calculator
-set key -7 to phonedir
-set key -8 to reminder
-set key -9 to calendar
+* -- 12.08.09
+*set key -5 to dispmsg
+*set key -6 to calculator
+*set key -7 to phonedir
+*set key -8 to reminder
+*set key -9 to calendar
+* --
+
 set key 28 to
 set key -1 to
 set key -2 to
@@ -1005,12 +1039,13 @@ if found ()
       endif
    endif
    setcolor ("w+"+gmenuback)
-   @ 01, 00
+   @ 01, 00 
    if empty (glocname)
       @ 01, 22 say " RAC Car Rental Management System "
    else
       @ 01, 39 - round (len (glocname) / 2, 0) say " " + glocname + " "
    endif
+   @ 01, 74 say "<"+gusrid+">"
    xcnt = 0
    gopts = ""
    do while ftitle = xftitle .and. xcnt <= 9
@@ -1067,6 +1102,13 @@ do while .t.
          close all
          break
       endif
+      * -- 12.08.09
+      * if xkey = -4
+      *    do rrndr
+      *   set cursor off
+      *   loop
+      * endif
+      * --
       if xkey = -5
          do dispmsg
          loop
@@ -1290,6 +1332,7 @@ function f_screen
 parameters xtime, xfscn
 private yrow1, yrow2, ycol1, ycol2, ystrm, ycolor, ytitle
 private yscm, ysay, ypict, yvalid, yget, ysel
+private yscn
 
 if xtime = 0
    if .not. f_getscn (xfscn)
@@ -1703,18 +1746,18 @@ do while .t.
    endcase
 enddo
 
-
 ******************************
-* 10.26.98: year 2000
 function f_edit
 
-parameters xdbfld, xdbcol, xeditno, xdelete, xdbvalid, xdbpict
+parameters xdbfld, xdbcol, xeditno, xdelete, xdbvalid, xdbpict, xedfld
 private yvalid, ypict, n, yedlen, ymaxlen, yfld1, yfld2, yrecno, yvldstr, yans1
-private x1, x2, x3, yd1, yd2, yedscn, yfldlen, ydate
+private x1, x2, x3, yd1, yd2, yedscn, yfldlen
+private yedit, ydflag
 if empty (fieldname (1))
    return .f.
 endif
 
+yedit = (pcount () < 7)
 yvalid = (pcount () < 5)
 ypict = (pcount () < 6)
 
@@ -1761,6 +1804,16 @@ for n = 1 to yedlen
    if x3 > yfldlen
       yfldlen = x3
    endif
+
+   if yedit
+      ydflag = .t.
+   else
+      ydflag = xedfld [n]
+      ydflag = &ydflag
+   endif
+   
+   if ydflag
+
    if x1 > x3
       if empty (yd1)
          yd1 = xdbcol [n]
@@ -1780,6 +1833,9 @@ for n = 1 to yedlen
          yd2 = yd2 + "+[³]+" + x2
       endif
    endif
+
+   endif
+
    xdbcol [n] = left (trim (xdbcol [n]) + replicate (".", ymaxlen), ymaxlen)
 next
 
@@ -1793,7 +1849,6 @@ do while .t.
    if yans = "D"
       if f_confirm ("Are you sure you want to delete this " + ;
             "record? [Y/N]", "YN") = "Y"
-         f_fupdate ("D")
          reclock ()
          delete
          commit
@@ -1842,7 +1897,9 @@ do while .t.
             endif
          next
          f_rd ()
-         if yans = "A"
+         if yans = "A" .and. lastkey() = 27      && 06.19.00
+            yans1 = f_confirm ("[E]dit   [V]oid", "EV")
+         elseif yans = "A"
             yans1 = f_confirm ("[C]onfirm   [E]dit   [V]oid", "CEV")
          else
             yans1 = f_confirm ("[C]onfirm   [E]dit   [I]gnore", "CEI")
@@ -1850,8 +1907,6 @@ do while .t.
          if yans1 = "C"
             if yans = "A"
                append blank
-            else
-               f_fupdate ("C")
             endif
             reclock ()
             for n = 1 to yedlen
@@ -1867,11 +1922,9 @@ do while .t.
             next
             commit
             unlock
-            if yans = "A"
-               f_fupdate ("A")
-            endif
             exit
          elseif yans1 $ "IV"
+            go yrecno     && 06.19.00
             exit
          endif
       enddo
@@ -2041,6 +2094,7 @@ do while .t.
       enddo
    endcase
 enddo
+
 
 
 ******************************
@@ -3019,6 +3073,100 @@ if year (xdate) <= 1920
 endif
 return .t.
 
+***************************
+* email report interface
+*   xto: email address
+*   xreport: report name
+*   xfile: report file
+* ----
+* 06.22.11
+function f_sndrep
+parameter xto, xreport, xfile
+
+private yfil
+
+yfil = gempath + "emrpt.dbf"
+if file (yfil)
+   select 0
+   use &yfil
+   reclock ()
+   append blank
+   replace femail with xto, freport with xreport
+   replace ffile with xfile     && i.e. rr123456.txt
+   commit
+   unlock
+   use
+   return .t.
+else
+   return .f.
+endif
+
+***************************
+* validate email:
+*   xemail: email addr
+*   xedit: if .t. => allow NA as valid 
+* 1. not empty
+* 2. /\A[\W+\-.]+@[a-Z\d\-.\.[a-Z]+\Z/
+* -------------------------------------
+function f_goodem
+parameter xemail, xedit
+private yok
+
+if pcount () = 1
+   xedit = .t.
+endif 
+   
+* special case:
+if xedit .and. upper(trim(xemail)) == "NA"     && not applicable 
+   return .t.
+endif   
+
+if empty(xemail)
+   return .f.
+endif
+
+* standard check
+yok = .t.
+do case
+case at ("@", xemail) = 0
+   yok = .f.
+case at (".", xemail) = 0
+   yok = .f.
+otherwise
+   * check valid domain
+   ystr = upper(substr(xemail,at("@",xemail)+1))    && xxx@xxx.domain
+   if at(".", ystr) = 0
+      yok = .f.
+   else
+      yok = .f.
+      if ".COM" $ ystr
+	     yok = .t.
+      elseif ".NET" $ ystr		 
+	     yok = .t.
+      elseif ".ORG" $ ystr		 
+	     yok = .t.
+      elseif ".GOV" $ ystr		 
+	     yok = .t.
+      elseif ".MIL" $ ystr		 
+	     yok = .t.
+      elseif ".EDU" $ ystr		 
+	     yok = .t.
+      elseif ".BIZ" $ ystr		 
+	     yok = .t.
+      elseif ".MOB" $ ystr		 
+	     yok = .t.
+      elseif ".PRO" $ ystr		 
+	     yok = .t.
+      elseif ".INT" $ ystr		 
+	     yok = .t.
+      elseif ".CA" $ ystr		 && Canada
+	     yok = .t.
+	  endif	  
+   endif	  
+endcase
+
+return yok
+
 **********************************
 * check system message ...
 procedure dispmsg
@@ -3045,4 +3193,116 @@ setcolor (ycolor)
 f_restbox (yscn)
 set key -5 to dispmsg
 return
+
+******************************
+function block_rate
+parameters xloc, xcode, xclass, xdateout
+yblock = .f.
+
+f_use ("rartml")
+seek xloc+xcode+xclass
+
+do while .not. eof () .and. rartml->floc=xloc .and. rartml->fcode=xcode  ;
+          .and. rartml->fclass = xclass .and. .not. yblock
+   yblock = check_block (xdateout)
+   skip
+enddo
+
+if yblock
+   f_valid (.f.,"Rate is blocked for this period...")
+   use
+   return .t.
+endif
+
+* handle rate code for ALL locations
+*seek space(10)+l_fcode+l_fclass
+*do while .not. eof () .and. rartml->floc=space(10) .and. rartml->fcode=xcode  ;
+*          .and. rartml->fclass = xclass .and. .not. yblock
+*   yblock = check_block ()
+*   skip
+*enddo
+
+select rartml
+use
+if yblock
+   f_valid (.f.,"Rate is blocked for this period...")
+   return .t.
+else
+   return .f.
+endif
+
+*********************
+function check_block
+parameter xdateout
+
+zblock = .f.
+if .not. empty(rartml->fdtfrom1)
+   if xdateout >= rartml->fdtfrom1 .and. xdateout <= rartml->fdtto1
+       zblock = .t.
+   endif
+endif
+if .not. empty(rartml->fdtfrom2)
+   if xdateout >= rartml->fdtfrom2 .and. xdateout <= rartml->fdtto2
+       zblock = .t.
+   endif
+endif
+if .not. empty(rartml->fdtfrom3)
+   if xdateout >= rartml->fdtfrom3 .and. xdateout <= rartml->fdtto3
+       zblock = .t.
+   endif
+endif
+
+return (zblock)
+
+* =====================================================
+function get_usrid
+parameters xid
+private ycolor, yscn, yflg, ypass
+
+ycolor = setcolor (gsubcolor)
+yscn = f_box (05, 30, 08, 57)
+do while .t.
+   xid = space(3)
+   @ 06, 32 say "User ID.... "
+   @ 06, 44 get xid pict "!!!" valid ;
+     f_valid (f_verify ("rausr", 1, xid), "Invalid User Id...") 
+   if f_rd () = 27 .or. empty(xid)
+      yflg = .f.
+      exit
+   endif
+
+   ypass = ""
+   ysp = 44
+   set console off
+   set cursor on
+   @ 07, 32 say "Password... "
+   @ 7, 44 say space(10)
+   do while len (ypass) < 11
+      @ 7, ysp say ""
+      wait to ychr
+      if len (ychr) > 0
+         @ 7, ysp say "X"
+         ysp = ysp + 1
+         ypass = ypass + upper (ychr)
+      else
+         exit
+      endif
+   enddo
+   * set cursor off
+   set console on
+   if .not. f_valid (f_truncate (ypass, len (fpasswd)) = fpasswd, ;
+         "Invalid Password, Please Retry ...")
+      @ 7, 44 say space(10)
+      loop
+   else
+      yflg = .t.
+      exit
+   endif
+
+enddo
+
+f_restbox (yscn)
+setcolor (ycolor)
+return (yflg)
+
 

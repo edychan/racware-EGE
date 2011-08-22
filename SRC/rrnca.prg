@@ -50,6 +50,13 @@
 * 2. prompt with current email after confirm before save
 * 3. do not print close ra, instead prompt
 * 4. if no, save ra and exit
+* --
+* 08.18.11: 
+* Calcuation changes to adhere to Dollar convention
+* use daily rate (instead of the extra day rate) for ERC calculation
+* use extended rate (usally daily rate * 15% for example) for extended rental
+* i.e. 5days + 2 extended days = 1 week + 2 extended days
+* Block out Deposit field if freesell is false
 * ===========================================================================
 store space (15) to yitem1, yitem2, yitem3, yitem4, yitem5, yitem6   && 10.15.08
 set century on     && 07.09.99
@@ -484,24 +491,29 @@ endif
    valid f_valid (l_frloc $ gusrloc)
 @ 4, 34 get l_fdatein valid f_valid (f_y2k(@l_fdatein) .and. l_fdatein >= l_fdateout)
 @ 4, 45 get l_ftimein picture [99:99] valid rrnca1 ()
-@ 7, 16 say l_funit picture replicate ([!], 10)
+* -- 08.22.11: make room for extra day rate
+@ 6, 16 say l_funit picture replicate ([!], 10)
 
-@ 8, 16 get l_fmlgin picture replicate ([9], 6) valid rrnca2 ()
-@ 9, 16 say l_fmlgout picture replicate ([9], 6)
-@ 10, 16 say l_fmlg picture replicate ([9], 6)
-@ 11, 16 say l_ffuelout picture [9]
-@ 11, 23 get l_ffuelin picture [9] valid rrnca3 ()
-@ 7, 37 say l_feunit picture replicate ([!], 10)
-@ 8, 37 say l_femlgin picture replicate ([9], 6)
-@ 9, 37 say l_femlgout picture replicate ([9], 6)
-@ 10, 37 say l_femlg picture replicate ([9], 6)
-@ 11, 37 say l_fefuelou picture [9]
-@ 11, 44 say l_fefuelin picture [9]
+@ 7, 16 get l_fmlgin picture replicate ([9], 6) valid rrnca2 ()
+@ 8, 16 say l_fmlgout picture replicate ([9], 6)
+@ 9, 16 say l_fmlg picture replicate ([9], 6)
+@ 10, 16 say l_ffuelout picture [9]
+@ 10, 23 get l_ffuelin picture [9] valid rrnca3 ()
+@ 6, 37 say l_feunit picture replicate ([!], 10)
+@ 7, 37 say l_femlgin picture replicate ([9], 6)
+@ 8, 37 say l_femlgout picture replicate ([9], 6)
+@ 9, 37 say l_femlg picture replicate ([9], 6)
+@ 10, 37 say l_fefuelou picture [9]
+@ 10, 44 say l_fefuelin picture [9]
 *
 yedit = yfreesell
 *
 IF yedit
 
+* -- 08.22.11: extra days rate
+@ 12, 16 get l_fxdly picture [999] valid rrncaret (1)
+@ 12, 24 get l_fxdlychg picture [9999.99] valid rrnca5a ()
+@ 12, 37 say l_fxdlytot picture [99999.99]
 @ 13, 16 get l_fdly picture [999] valid rrncaret (1)
 @ 13, 24 get l_fdlychg picture [9999.99] valid rrnca5 ()
 @ 13, 37 say l_fdlytot picture [99999.99]
@@ -514,6 +526,7 @@ IF yedit
 @ 16, 16 get l_fmth picture [999] valid rrncaret (1)
 @ 16, 24 get l_fmthchg picture [9999.99] valid rrnca14 ()
 @ 16, 37 say l_fmthtot picture [99999.99]
+* --
 @ 17, 16 get l_fhr picture [999] valid rrncaret (1)
 @ 17, 24 get l_fhrchg picture [9999.99] valid rrnca17 ()
 @ 17, 37 say l_fhrtot picture [99999.99]
@@ -546,7 +559,11 @@ ENDIF
 @ 3, 66 get l_fgastyp pict "!" valid rrnca351 ()
 @ 3, 71 get l_ffueltot picture [99999.99] valid rrnca34 ()    && 01/27/95
 @ 4, 71 get l_fdmgtot picture [99999.99] valid rrnca35 ()
-@ 6, 71 get l_fdepamt picture [99999.99] valid rrnca36 ()
+* --08.18.11: only for supervisor
+if yedit 
+   @ 6, 71 get l_fdepamt picture [99999.99] valid rrnca36 ()
+endif
+* --
 @ 7, 71 say l_famtdue picture [99999.99]
 *
 @ 10, 57 get l_fpaytyp1 picture [!!!] valid rrnca38 ()
@@ -639,6 +656,9 @@ return .t.
 * time and mileage calculation
 * 11.01.08: add early rental fee calc
 *           add add'l date rental fee calc
+* --
+* 08.22.11: add extra day rate according to dollar convention
+*   i.e. for 9 days rental = 1 week + 2 extra day (instead of 2 reg days)
 *------------------------------------------
 procedure rrncacal1
 private y1, y2, y3, yto, yti, yrtot, yfdays, yfhr
@@ -648,12 +668,14 @@ f_popup ("Please Wait While Calculating Time & Mileage Charges...", .f.)
 
 * initialize variables
 l_fdly = 0
+l_fxdly = 0          && 08.22.11
 l_fwkd = 0
 l_fwkdtot = 0
 l_fdlytot = 0
 l_fwktot = 0
 l_fmthtot = 0
 l_fhrtot = 0
+l_fxdlytot = 0        && 08.22.11
 * --
 
 if l_fcalday
@@ -789,19 +811,22 @@ endif
 
 yrdays = l_fdly
 yrhr = l_fhr
+yxdlychg = l_fdlychg         && 08.22.11: reg. daily rate
 * estimate weekly chg 01/07/95:(edc)
 l_fwk = 0
 if l_fwkchg > 0.00       &&  .and. (l_ftmtyp = 3 .or. ylowrchg)
-   if ylowrchg
+  * 08.22.11: extra day rate applies to weekly rate only
+  yxdlychg = if(l_fxdlychg > 0, l_fxdlychg, l_fdlychg)   
+  if ylowrchg
       l_fwk = int (yfdays/7)
       l_fdly = yfdays - l_fwk * 7
       l_fhr = yfhr
-      if l_fdly * l_fdlychg + l_fhr * l_fhrchg > l_fwkchg
+      if l_fdly * yxdlychg + l_fhr * l_fhrchg > l_fwkchg
          l_fwk = l_fwk + 1
          l_fdly = 0
          l_fhr = 0
       endif
-      if l_fdly > 0 .and. l_fdlychg <= 0
+      if l_fdly > 0 .and. yxdlychg <= 0
          l_fwk = l_fwk + 1
          l_fdly = 0
          l_fhr = 0
@@ -812,30 +837,9 @@ if l_fwkchg > 0.00       &&  .and. (l_ftmtyp = 3 .or. ylowrchg)
          * compare weekly charge taking into account of mileage calc.
          yrmlg = l_fmlgs - ((l_fwkmlg * l_fwk) + (l_fdlymlg * l_fdly)) 
          yrmlgw = if(yrmlg > 0, yrmlg * l_fmlgchg, 0)
-         *y1 = (l_fwk * l_fwkchg) + (l_fdly * l_fdlychg) +   ;
-         *     + (l_fhr * l_fhrchg) + yrmlgw
-         *yrmlg = l_fmlgs - (l_fwkmlg * l_fwk + l_fdlymlg * (l_fdly+1)) 
-         *yrmlgw = if(yrmlg > 0, yrmlg * l_fmlgchg, 0)
-         *y2 = l_fwk * l_fwkchg + (l_fdly+1) * l_fdlychg +   ;
-         *     + yrmlgw
-         *if y1 > y2 .and. l_fdlychg > 0.00
-         *   l_fdly = l_fdly + 1 
-         *   l_fhr = 0
-         *   y1 = y2
-         *endif
-         *yrmlg = l_fmlgs - (l_fwkmlg * (l_fwk + 1))       
-         *yrmlgw = if(yrmlg > 0, yrmlg * l_fmlgchg, 0)
-         *y2 = ((l_fwk + 1) * l_fwkchg) + yrmlgw
-         *if y1 > y2
-         *   l_fwk = l_fwk + 1
-         *   l_fdly = 0
-         *   l_fhr = 0
-         *endif
-         *yrmlg = l_fmlgs - ((l_fwkmlg * l_fwk) + (l_fdlymlg * l_fdly)) 
-         *yrmlgw = if(yrmlg > 0, yrmlg * l_fmlgchg, 0)
       endif
       if l_fwk > 0
-         ytotw = l_fwk * l_fwkchg + l_fdly * l_fdlychg +   ;
+         ytotw = l_fwk * l_fwkchg + l_fdly * yxdlychg +   ;
                  l_fhr * l_fhrchg + yrmlgw
          if ytotw > ytotd
             l_fwk = 0
@@ -951,7 +955,11 @@ else
    l_fmthtot = 0.00
 endif
 
-if l_fdlychg > 0.00
+if l_fxdlychg > 0.00 .and. yfdays > 7        && extra day charge applies when rental days > 7
+   l_fxdly = l_fdly                          && if we take extra day, reg day should be zero out
+   l_fdly = 0 
+   l_fxdlytot = l_fxdlychg * l_fxdly
+elseif l_fdlychg > 0.00
    l_fdlytot = l_fdlychg * l_fdly
 elseif l_fwkchg > 0.00
    if l_fdly > 0      && 01/10/94:(edc)  
@@ -970,7 +978,7 @@ elseif l_fmthchg > 0
    endif
 endif
 l_fhrtot = l_fhr * l_fhrchg
-l_ftmetot = l_fdlytot + l_fwkdtot + l_fwktot + l_fmthtot + l_fhrtot
+l_ftmetot = l_fdlytot + l_fwkdtot + l_fwktot + l_fmthtot + l_fhrtot + l_fxdlytot      && 08.22.11: extra day charge
 
 * --12.21.09: exclude jet center (RA begin with [3]) from [ERC]
 if l_frloc = [EGE] .and. substr(alltrim(str(l_frano)),1,1) = [3]
@@ -1129,6 +1137,7 @@ if l_fdmgtot = 0.00
 endif
 
 setcolor (gblueget)
+@ 12, 24 say l_fxdlychg picture [9999.99]          && 08.22.11
 @ 13, 16 say l_fdly picture [999]
 @ 14, 16 say l_fwkd picture [999]
 @ 15, 16 say l_fwk picture [999]
@@ -1143,7 +1152,6 @@ setcolor (gblueget)
 @ 1, 71 say l_fcredtot picture [99999.99]
 @ 2, 58 say l_ftax picture [99.99]
 @ 4, 71 say l_fdmgtot picture [99999.99]
-
 @ 13, 24 say l_fdlychg picture [9999.99]
 @ 14, 24 say l_fwkdchg picture [9999.99]
 @ 15, 24 say l_fwkchg picture [9999.99]
@@ -1152,6 +1160,7 @@ setcolor (gblueget)
 @ 18, 24 say l_fmlgchg picture [9999.99]
 
 setcolor (gbluecolor)
+@ 12, 37 say l_fxdlytot picture [99999.99]         && 08.22.11
 @ 13, 37 say l_fdlytot picture [99999.99]
 @ 14, 37 say l_fwkdtot picture [99999.99]
 @ 15, 37 say l_fwktot picture [99999.99]
@@ -1195,6 +1204,14 @@ l_fdlytot = l_fdlychg * l_fdly
 @ 13, 37 say l_fdlytot picture [99999.99]
 return .t.
 
+******************************
+* calculate extra daily charge
+******************************
+function rrnca5a
+
+l_fxdlytot = l_fxdlychg * l_fxdly
+@ 12, 37 say l_fxdlytot picture [99999.99]
+return .t.
 
 ******************************
 * calculate spec rate charge
@@ -1243,7 +1260,7 @@ function rrnca20
 
 l_fmlgtot = l_fmlgchg * l_fmlgs
 @ 18, 37 say l_fmlgtot picture [99999.99]
-l_ftmetot = l_fdlytot + l_fwkdtot + l_fwktot + l_fmthtot + l_fhrtot
+l_ftmetot = l_fdlytot + l_fwkdtot + l_fwktot + l_fmthtot + l_fhrtot + l_fxdlytot       && 08.22.11: extra day
 @ 19, 37 say l_ftmetot + l_fmlgtot picture [99999.99]
 return .t.
 
@@ -1253,7 +1270,7 @@ return .t.
 ******************************
 function rrnca22
 
-l_fdisctot = round (l_fdisc * (l_fdlytot + l_fwkdtot + l_fwktot + l_fmthtot + ;
+l_fdisctot = round (l_fdisc * (l_fdlytot + l_fxdlytot + l_fwkdtot + l_fwktot + l_fmthtot + ;      && 08.22.11
    l_fhrtot + l_fmlgtot) / 100.00, 2)
 @ 20, 37 say l_fdisctot picture [99999.99]
 

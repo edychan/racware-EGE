@@ -44,12 +44,16 @@
 * ---------------------------------------------------------------------------
 * 04.06.10: increase email field length (+10)
 * 04.06.10: allow email for closed, cancel, noshow res.
+* ---------------------------------------------------------------------------
+* 11.08.10: add/update res -> send as email
+* 11.08.10: NS/CXL special handling e.g. charges, remarks, cxl & email date 
 * ===========================================================================
 
 parameters xtyp
 
 private yatc, ycustno, ycrpno, yrate, yclass, yloc, ycomm, yresvno, yunit
 private yrdateout, yrdatein, yans, ydateout
+private yfld, ystatus
 
 f_clrscn ("Reservation File")
 f_popup ("Please Wait...")
@@ -113,7 +117,7 @@ if xtyp = "A"
          endif
          setcolor (gbluecolor)
          f_rd ()
-         if empty (l_fresvno)
+         if empty (l_fresvno) .or. empty(l_flname) .or. empty(l_ffname)
             ykeyin = f_confirm ("[E]dit  [V]oid", "EV")
          else
             ykeyin = f_confirm ("[C]onfirm  [E]dit  [V]oid", "CEV")
@@ -201,6 +205,10 @@ if xtyp = "A"
                f_restbox (yscn)
                setcolor (ycolor)
             endif
+
+            * --11.08.10: email res msg
+            do mailresv
+
             exit
          case ykeyin = "E"
             f_screen (1, "RARES")
@@ -317,28 +325,34 @@ else
    f_screen (0, "RARES")
 
    do while .t.
-      * 04/28/94: edc show cancellation date correctly
       if l_fresvstat = "O"
-         @ 17,45 say "Checkout Date....."
-         @ 17,64 say "        "
+         @ 16,45 say "RA# .............." + space(12)
+         @ 17,45 say "Email Last Sent..."
+         @ 17,64 say l_femdate
          * 12/07/95: edc allow cc deposit for open res
-         ykeyin = f_confirm ("[U]pdate  [C]ancel  [E]mail  [R]es Deposit  " + ;
+         ykeyin = f_confirm ("[U]pdate  [C]ancel  [E]mail  [R]es Charge  " + ;
             "[N]ext  [P]rev  [Q]uit", "UCERNPQ")
       elseif l_fresvstat $ "X;U"
-         @ 17,45 say "Checkout Date....."
-         @ 17,64 say l_fdateout
+         @ 16,45 say "RA# .............."
+         @ 16,64 say str(frano,10)
+         @ 17,45 say "Email Last Sent..."
+         @ 17,64 say l_femdate
          ykeyin = f_confirm ("[D]etail  [E]mail  [N]ext  " + ;
             "[P]revious  [Q]uit", "DENPQ")
       else
          if l_fresvstat = "C"
-            @ 07,23 say  l_fdateout+l_fdays
-            @ 17,45 say "Date Cancelled...."
-            @ 17,64 say l_fdatein
+            * @ 07,23 say  l_fdateout+l_fdays    && 11.08.10
+            * @ 17,64 say l_fdatein
+            @ 16,45 say "Date Cancelled...."
+            @ 16, 64 say l_fcxldate
+            @ 17,45 say "Email Last Sent..."
+            @ 17,64 say l_femdate
          else
-            @ 17,45 say "Checkout Date....."
-            @ 17,64 say "        "
+            @ 16,45 say "RA# .............."+space(12)
+            @ 17,45 say "Email Last Sent..."
+            @ 17,64 say l_femdate 
          endif
-         ykeyin = f_confirm ("[R]esv Deposit  [D]etail  [E]mail  [N]ext  " + ;
+         ykeyin = f_confirm ("[R]esv Charge  [D]etail  [E]mail  [N]ext  " + ;
             "[P]revious  [Q]uit", "RDENPQ")
       endif
       do case
@@ -346,75 +360,8 @@ else
       * 06.15.09: email open rez
       case ykeyin = "E"
          clear gets
-         setcolor (gsubcolor)
-         yscn = f_box (13, 14, 16, 73)
-         yemail = rares->femail
-         @ 14, 16 say "email ....."
-         do while .t.
-         @ 14, 28 get yemail picture replicate ("x", 40) ;
-            valid f_valid (good_email (yemail), "Invalid email address ...")
-         if f_rd () = 27
-            exit
-         endif
-         ykeyin = f_confirm ("[C]onfirm   [E]dit   [I]gnore", "CEI")
-         if ykeyin = "C"
-
-            select rares
-            reclock ()
-            replace femail with yemail
-            commit
-            unlock
-
-            * update gempath+"rezmsg.dbf"
-            yfil = gempath + "rezmsg.dbf"
-            if file (yfil)
-               ydays = l_fdatein - l_fdateout
-               do case
-               case ydays > 4 .and. l_fwkchg > 0
-                  yrate = [$ ] + alltrim(str(l_fwkchg,8,2)) + [ per week. Unlimited mileage.]
-               otherwise
-                  yrate = [$ ] + alltrim(str(l_fdlychg,8,2)) + [ per day. Unlimited mileage.]
-               endcase
-               
-               yname = trim(l_ffname)+[ ]+trim(l_flname)
-               * -- get est. charges
-               l_fsurchg = 0
-               l_fsurchg1 = 0
-               l_ftaxtot = 0
-               yestchg = rrvestchg ()
-
-               select 0
-               use &yfil
-               reclock ()
-               append blank
-               replace femail with yemail, fresvno with l_fresvno
-               replace fname with yname
-               replace fcartype with l_fclass, frate with yrate
-               replace fdateout with dtoc(l_fdateout)+" "+l_ftimeout
-               replace fdatein with dtoc(l_fdatein)+" "+l_ftimein
-               replace fsurchg with l_fsurchg, fsurchg1 with l_fsurchg1
-               replace ftaxtot with l_ftaxtot, ftotal with yestchg
-               replace ffile with if(l_floc='EGE',"ege.htm","jac.htm")
-               commit
-               unlock
-               use
-               f_valid (.f., "Email is now in the message queue ...")
-            else
-               f_valid (.f., "Email is not setup ...")
-            endif
-            f_screen (0, "RARES")
-            exit
-         elseif ykeyin = "E"
-            loop
-         else
-            exit
-         endif
-         enddo
-         select rares
-         f_restbox (yscn)
-         setcolor (gbluecolor)
-
-      * --
+         do mailresv      && 11.08.10
+         f_screen (0, "RARES")
 
       * 02/15/94: handle res. deposit
       case ykeyin = "R"
@@ -429,7 +376,7 @@ else
          yauthstat = space (20)
          yrectype = __gccuncap
          yauthonly = .f.
-         @ 14, 16 say "Deposit Type............. "
+         @ 14, 16 say "Charge Type............. "
          @ 15, 16 say "CC Number ............... "
          @ 16, 16 say "Expiration............... "
          @ 17, 16 say "Amount .................. "
@@ -461,23 +408,35 @@ else
             f_rd ()
             if empty(yauthcode) .and. ycode = 1
                yauthstat = space (30)
-               if get_auth ("S", yccnum, yexp, yamt, @yauthcode, ;
-                            @yauthstat) = 0
-                 if f_valid (auth_ok (yauthstat, @yauthcode), ;
-                            "Warning! Credit Card Authorization is rejected!")
-                    @ 18, 42 say yauthcode
-                    yrectype = 3
-                 else
-                    yrectype = 6
-                 endif
+               * -- 12.15.10
+               if get_auth ("S", yccnum, yexp, yamt, @yauthcode, @yauthstat) = 0
+                  if auth_ok (yauthstat, @yauthcode)
+                     @ 18, 42 say yauthcode
+                     yrectype = 3
+                  else
+                     f_valid (.f., "Warning! Credit Card Authorization is rejected!")
+                     yrectype = 6
+                  endif
+               else
+                  yrectype = 6
                endif
+               * --
             endif
             ykeyin = f_confirm ("[C]onfirm   [E]dit   [I]gnore", "CEI")
             if ykeyin = "C"
                select rares
                f_fupdate ("C")
                reclock ()
-               replace fdepamt with fdepamt + yamt
+               * 12.15.10: save credit card info...
+               replace fccnum with yccnum, fcctype with ypaytyp
+               replace fccexp with yexp
+               if l_fresvstat = "O"
+                  l_fdepamt = fdepamt + yamt
+                  replace fdepamt with l_fdepamt
+               else
+                  l_freschg = freschg + yamt
+                  replace freschg with l_freschg
+               end   
                commit
                unlock
                if ycode = 1          
@@ -489,7 +448,15 @@ else
                   replace fccexp with yexp, fccnum with yccnum
                   replace fcctype with ypaytyp, ffname with rares->ffname
                   replace flname with rares->flname, floc with rares->floc
-                  replace frano with 999999, frectype with yrectype
+                  if l_fresvstat = "O"
+                     l_fdbrno = 0
+                     l_frano = 999999
+                  else
+                     l_fdbrno = 9999
+                     l_frano = val(substr(l_fresvno,5))
+                  endif
+                  replace frano with l_frano, fdbrno with l_fdbrno
+                  replace frectype with yrectype
                   replace frloc with rares->floc
                   if empty (yauthcode) 
                      replace ftranstyp with "F"
@@ -501,18 +468,20 @@ else
                   f_fupdate ("A")
                   use
                endif
-               f_use ("RADTR")
-               f_findblank ()
-               replace floc with rares->floc, frano with 999999
-               replace funit with rares->fresvno, frloc with rares->floc
-               replace flname with rares->flname, fpaytyp1 with ypaytyp
-               * replace foitem1 with "RES", fotot1 with yamt
-               replace famt1 with yamt, frectype with "A"    && 11.16.99
-               replace ftotal with yamt           
-               commit
-               unlock
-               f_fupdate ("A")
-               use
+               if l_fresvstat = "O"
+                  f_use ("RADTR")
+                  f_findblank ()
+                  replace floc with rares->floc, frano with 999999
+                  replace funit with rares->fresvno, frloc with rares->floc
+                  replace flname with rares->flname, fpaytyp1 with ypaytyp
+                  * replace foitem1 with "RES", fotot1 with yamt
+                  replace famt1 with yamt, frectype with "A"    && 11.16.99
+                  replace ftotal with yamt           
+                  commit
+                  unlock
+                  f_fupdate ("A")
+                  use
+               endif
                f_screen (0, "RARES")
                exit
             elseif ykeyin = "E"
@@ -526,9 +495,33 @@ else
          setcolor (gbluecolor)
 
       case ykeyin = "D"
+         if l_fresvstat = "C"
+            * 12.15.10:
+            if rrvcxl ()
+               select rares
+               reclock ()
+               replace fcxldate with l_fcxldate        && 11.08.10 ....
+               replace freschg with l_freschg
+               replace fnote with l_fnote
+               replace fresvstat with "C"
+               commit
+               unlock
+            endif
+         elseif l_fresvstat = "N"
+            * --11.08.10
+            if rrvnoshow ()
+               select rares
+               reclock ()
+               replace freschg with l_freschg
+               replace fnote with l_fnote
+               replace fresvstat with "N"
+               commit
+               unlock
+            endif
+            * -- 
+         else
          ycolor = setcolor (gsubcolor)
-         yscn = f_box (5, 4, 13, 75)
-         
+         yscn = f_box (5, 4, 14, 75)
          @ 06, 6 say "Reference#............."             && 11/03/93 (edc)
          @ 07, 6 say "Last/First Name........"
          @ 08, 9 say "Address............."
@@ -536,6 +529,7 @@ else
          @ 10, 9 say "Phone #............."
          @ 11, 9 say "Driver Lic/State...."
          @ 12, 9 say "Expire/DOB.........."
+         @ 13, 6 say "Email:"
          setcolor (gsubget)
          @ 06, 30 say l_frefno
          @ 07, 30 say l_flname
@@ -548,10 +542,12 @@ else
          @ 11, 30 say l_fcinsur1             && driver lic
          @ 11, 52 say substr(l_fshop,1,2)    && state
          @ 12, 30 say l_fexp1                && expiration
-         @ 12, 40 say l_fcexp1               && DOB
+         @ 12, 42 say l_fcexp1               && DOB
+         @ 13, 13 say l_femail
+         setcolor (ycolor)
          f_popup ("Press Any Key to Continue...", .t.)
          f_restbox (yscn)
-         setcolor (ycolor)
+         endif
       case ykeyin = "U"
          do while .t.
             if .not. yfreesell
@@ -670,6 +666,9 @@ else
                f_use ("rares")
                f_fupdate ("C")
                f_replace ()
+
+               * --11.08.10: email resv?
+               do mailresv
                exit
             case ykey = "E"
                f_screen (1, "RARES")
@@ -686,23 +685,25 @@ else
             endcase
          enddo
          exit
-      case ykeyin = "C"
-         if f_confirm ("Are you sure? [Y/N]", "YN") = "Y"
+      case ykeyin = "C"      && cancellation
+         * if f_confirm ("Are you sure? [Y/N]", "YN") = "Y"
             clear gets
-            l_fdatein = date ()
-            @ 17, 45 say "Date Cancelled...."
-            @ 17, 64 get l_fdatein
+            *l_fdatein = date ()
+            *@ 17, 45 say "Date Cancelled...."
+            *@ 17, 64 get l_fdatein
             * 06/08/94 (edc) update remarks field
-            @ 21, 23 get l_fremark1
-            @ 22, 23 get l_fremark2
-            if f_rd () = 27
-               exit
-            endif
+            *@ 21, 23 get l_fremark1
+            *@ 22, 23 get l_fremark2
+            *if f_rd () = 27
+            *   exit
+            *endif
+         if rrvcxl ()
             f_fupdate ("C")
             reclock ()
-            replace fdatein with l_fdatein      && 04/06/94 (edc)
+            replace fcxldate with l_fcxldate        && 11.08.10 ....
+            replace freschg with l_freschg
+            replace fnote with l_fnote
             replace fresvstat with "C"
-            replace fremark1 with l_fremark1, fremark2 with l_fremark2
             commit
             unlock
             *if .not. empty (rares->funit)
@@ -713,27 +714,32 @@ else
             *   endif
             *   use
             *endif
-            f_use ("rartm")
-            if f_getrate (rares->fcode, rares->floc, rares->fclass, ;
-                  rares->fdateout)
-               f_fupdate ("C")
-               reclock ()
-               replace fresvcnt with fresvcnt - 1
-               commit
-               unlock
-            endif
-            if .not. empty (rares->fatc)
-               f_use ("raagnt", 1)
-               seek rares->fatc
-               if found ()
-                  f_fupdate ("C")
-                  reclock ()
-                  replace fres with fres - 1
-                  commit
-                  unlock
-               endif
-            endif
-            exit
+            * --11.08.10
+            *f_use ("rartm")
+            *if f_getrate (rares->fcode, rares->floc, rares->fclass, ;
+            *      rares->fdateout)
+            *   f_fupdate ("C")
+            *   reclock ()
+            *   replace fresvcnt with fresvcnt - 1
+            *   commit
+            *   unlock
+            *endif
+            *if .not. empty (rares->fatc)
+            *   f_use ("raagnt", 1)
+            *   seek rares->fatc
+            *   if found ()
+            *      f_fupdate ("C")
+            *      reclock ()
+            *      replace fres with fres - 1
+            *      commit
+            *      unlock
+            *   endif
+            *endif
+            * --12.29.10
+            * exit
+            l_fresvstat = "C"
+            f_screen (1, "RARES")
+            loop
          else
             f_screen (1, "RARES")
          endif
@@ -775,18 +781,18 @@ set key -2 to
 set key 1 to
 
 ******************************
-function good_email
-parameters xemail
-
-do case
-case empty(xemail)
-   return .f.
-case at ("@", xemail) = 0
-   return .f.
-otherwise
-   return .t.
-endcase
-
+* -- replace with f_goodem in rafunc
+*function good_email
+*parameters xemail
+*
+*do case
+*case empty(xemail)
+*   return .f.
+*case at ("@", xemail) = 0
+*   return .f.
+*otherwise
+*   return .t.
+*endcase
 
 ******************************
 procedure rrvfmsm
@@ -1023,7 +1029,165 @@ endcase
 setcolor (ycolor)
 return
 
-******************************
+*=========================================
+* 11.08.10 
+function rrvcxl
+private yret, yscn, ycolor, yptr, ycxldate
+private yn1, yn2, yn3, yn4, yn5, yn6, yn7, yn8
+
+ycolor = setcolor (gsubcolor)
+yscn = f_box (5, 14, 19, 70)
+ycxldate = if(empty(dtos(l_fcxldate)), dtoc(date()), dtoc(l_fcxldate))
+yn1 = substr(l_fnote,1,50)
+yn2 = substr(l_fnote,51,50)
+yn3 = substr(l_fnote,101,50)
+yn4 = substr(l_fnote,151,50)
+yn5 = substr(l_fnote,201,50)
+yn6 = substr(l_fnote,251,50)
+yn7 = substr(l_fnote,301,50)
+yn8 = substr(l_fnote,351,50)
+
+@ 06, 16 say "Reservation#......"
+@ 07, 16 say "Last/First Name..."
+@ 08, 16 say "Fee Charged......."     
+@ 09, 16 say "Date Cancelled...."
+@ 10, 16 say "Note:"
+setcolor (gsubget)
+@ 06, 35 say l_fresvno
+@ 07, 35 say trim(l_flname)+" "+l_ffname
+@ 08, 35 say str(l_freschg,8,2)         && 12.15.10
+@ 09, 35 say ycxldate
+@ 11, 18 say yn1
+@ 12, 18 say yn2
+@ 13, 18 say yn3
+@ 14, 18 say yn4
+@ 15, 18 say yn5
+@ 16, 18 say yn6
+@ 17, 18 say yn7
+@ 18, 18 say yn8
+
+yptr = 1
+do while .t.
+   do case
+   case yptr = 1
+      f_getfld (@ycxldate, 9, 35, "W/N", 0, "99/99/9999", .t.)
+      l_fcxldate = ctod (ycxldate)
+   * case yptr = 2
+   *   f_getnum (@l_freschg, 9, 35, "", "99999.99", .t.)
+   case yptr = 2
+      f_getfld (@yn1, 11, 18, "W/N", 0, replicate ("X", 50), .t.)
+   case yptr = 3
+      f_getfld (@yn2, 12, 18, "W/N", 0, replicate ("X", 50), .t.)
+   case yptr = 4
+      f_getfld (@yn3, 13, 18, "W/N", 0, replicate ("X", 50), .t.)
+   case yptr = 5
+      f_getfld (@yn4, 14, 18, "W/N", 0, replicate ("X", 50), .t.)
+   case yptr = 6
+      f_getfld (@yn5, 15, 18, "W/N", 0, replicate ("X", 50), .t.)
+   case yptr = 7
+      f_getfld (@yn6, 16, 18, "W/N", 0, replicate ("X", 50), .t.)
+   case yptr = 8
+      f_getfld (@yn7, 17, 18, "W/N", 0, replicate ("X", 50), .t.)
+   case yptr = 9
+      f_getfld (@yn8, 18, 18, "W/N", 0, replicate ("X", 50), .t.)
+   endcase
+   ykey = lastkey ()
+   if (ykey = 24 .or. ykey = 13) .and. yptr < 9
+      yptr = yptr + 1
+   elseif ykey = 5 .and. yptr > 1
+      yptr = yptr - 1
+   elseif ykey = 27 .or. ykey = 13 .or. ykey = 3 .or. ykey = 18
+      exit
+   endif
+enddo
+l_fnote = yn1 + yn2 + yn3 + yn4 + yn5 + yn6 + yn7 + yn8
+
+yret = .f.
+if f_confirm ("Do you want to save the changes? [Y/N]", "YN") = "Y"
+   yret = .t.
+endif
+
+f_restbox (yscn)
+setcolor (ycolor)
+return yret
+
+*=========================================
+* 11.08.10 
+function rrvnoshow
+private yret, yscn, ycolor, yptr, ycxldate
+private yn1, yn2, yn3, yn4, yn5, yn6, yn7, yn8
+
+ycolor = setcolor (gsubcolor)
+yscn = f_box (5, 14, 19, 70)
+ycxldate = if(empty(dtos(l_fcxldate)), dtoc(date()), dtoc(l_fcxldate))
+yn1 = substr(l_fnote,1,50)
+yn2 = substr(l_fnote,51,50)
+yn3 = substr(l_fnote,101,50)
+yn4 = substr(l_fnote,151,50)
+yn5 = substr(l_fnote,201,50)
+yn6 = substr(l_fnote,251,50)
+yn7 = substr(l_fnote,301,50)
+yn8 = substr(l_fnote,351,50)
+
+@ 06, 16 say "Reservation#......"
+@ 07, 16 say "Last/First Name..."
+@ 08, 16 say "Fee Charged......."
+@ 09, 16 say "NoShow Date......."
+@ 10, 16 say "Note:"
+setcolor (gsubget)
+@ 06, 35 say l_fresvno
+@ 07, 35 say trim(l_flname)+" "+l_ffname
+@ 08, 35 say str(l_freschg,8,2)
+@ 09, 35 say l_fdateout
+@ 11, 18 say yn1
+@ 12, 18 say yn2
+@ 13, 18 say yn3
+@ 14, 18 say yn4
+@ 15, 18 say yn5
+@ 16, 18 say yn6
+@ 17, 18 say yn7
+@ 18, 18 say yn8
+
+yptr = 1
+do while .t.
+   do case
+   case yptr = 1
+      f_getfld (@yn1, 11, 18, "W/N", 0, replicate ("X", 50), .t.)
+   case yptr = 2
+      f_getfld (@yn2, 12, 18, "W/N", 0, replicate ("X", 50), .t.)
+   case yptr = 3
+      f_getfld (@yn3, 13, 18, "W/N", 0, replicate ("X", 50), .t.)
+   case yptr = 4
+      f_getfld (@yn4, 14, 18, "W/N", 0, replicate ("X", 50), .t.)
+   case yptr = 5
+      f_getfld (@yn5, 15, 18, "W/N", 0, replicate ("X", 50), .t.)
+   case yptr = 6
+      f_getfld (@yn6, 16, 18, "W/N", 0, replicate ("X", 50), .t.)
+   case yptr = 7
+      f_getfld (@yn7, 17, 18, "W/N", 0, replicate ("X", 50), .t.)
+   case yptr = 8
+      f_getfld (@yn8, 18, 18, "W/N", 0, replicate ("X", 50), .t.)
+   endcase
+   ykey = lastkey ()
+   if (ykey = 24 .or. ykey = 13) .and. yptr < 8
+      yptr = yptr + 1
+   elseif ykey = 5 .and. yptr > 1
+      yptr = yptr - 1
+   elseif ykey = 27 .or. ykey = 13 .or. ykey = 3 .or. ykey = 18
+      exit
+   endif
+enddo
+l_fnote = yn1 + yn2 + yn3 + yn4 + yn5 + yn6 + yn7 + yn8
+
+yret = .f.
+if f_confirm ("Do you want to save the changes? [Y/N]", "YN") = "Y"
+yret = .t.
+endif
+f_restbox (yscn)
+setcolor (ycolor)
+return yret
+
+*====================================
 procedure rrvfmget
 *
 * revision:
@@ -1034,68 +1198,72 @@ procedure rrvfmget
 
 private yscn, ycolor, yptr, ydate1, ydate2
 ycolor = setcolor (gsubcolor)
-yscn = f_box (5, 4, 13, 75)
+yscn = f_box (5, 4, 15, 75)
 
-@ 06, 6 say "Reference#............."
-@ 07, 6 say "Last/First Name........"
-@ 08, 9 say "Address............."
-@ 09, 9 say "City/St/Zip........."     
-@ 10, 9 say "Phone #............."
-@ 11, 9 say "Driver Lic/State...."
-@ 12, 9 say "Expire/DOB.........."
+@ 06, 6 say "Email:"
+@ 08, 6 say "Reference#............."
+@ 09, 6 say "Last/First Name........"
+@ 10, 9 say "Address............."
+@ 11, 9 say "City/St/Zip........."     
+@ 12, 9 say "Phone #............."
+@ 13, 9 say "Driver Lic/State...."
+@ 14, 9 say "Expire/DOB.........."
 setcolor (gsubget)
 set century off     && y2k
-@ 06, 30 say l_frefno
-@ 07, 30 say l_flname
-@ 07, 45 say l_ffname
-@ 08, 30 say l_faddr
-@ 09, 30 say l_fcity
-@ 09, 46 say l_fstate
-@ 09, 50 say l_fzip
-@ 10, 30 say l_fphone
-@ 11, 30 say l_fcinsur1             && driver lic
-@ 11, 52 say substr(l_fshop,1,2)    && state
-@ 12, 30 say l_fexp1                && expiration
-@ 12, 40 say l_fcexp1               && DOB
+@ 06, 13 say l_femail
+@ 08, 30 say l_frefno
+@ 09, 30 say l_flname
+@ 09, 45 say l_ffname
+@ 10, 30 say l_faddr
+@ 11, 30 say l_fcity
+@ 11, 46 say l_fstate
+@ 11, 50 say l_fzip
+@ 12, 30 say l_fphone
+@ 13, 30 say l_fcinsur1             && driver lic
+@ 13, 52 say substr(l_fshop,1,2)    && state
+@ 14, 30 say l_fexp1                && expiration
+@ 14, 42 say l_fcexp1               && DOB
 yptr = 1
 ydate1 = dtoc (l_fexp1)
 ydate2 = dtoc (l_fcexp1)
 do while .t.
    do case
    case yptr = 1
-      f_getfld (@l_frefno, 6, 30, "W/N", 0, replicate ("X", 14), .t.)
+      f_getfld (@l_femail, 6, 13, "W/N", 0, replicate ("X", 50), .t.)
    case yptr = 2
-      f_getfld (@l_flname, 7, 30, "W/N", 0, replicate ("!", 14), .t.)
+      f_getfld (@l_frefno, 8, 30, "W/N", 0, replicate ("X", 14), .t.)
    case yptr = 3
-      f_getfld (@l_ffname, 7, 45, "W/N", 0, replicate ("!", 12), .t.)
+      f_getfld (@l_flname, 9, 30, "W/N", 0, replicate ("!", 14), .t.)
    case yptr = 4
-      f_getfld (@l_faddr, 8, 30, "W/N", 0, replicate ("X", 25), .t.)
+      f_getfld (@l_ffname, 9, 45, "W/N", 0, replicate ("!", 12), .t.)
    case yptr = 5
-      f_getfld (@l_fcity, 9, 30, "W/N", 0, replicate ("X", 15), .t.)
+      f_getfld (@l_faddr, 10, 30, "W/N", 0, replicate ("X", 25), .t.)
    case yptr = 6
-      f_getfld (@l_fstate, 9, 46, "W/N", 0, replicate ("!", 2), .t.)
+      f_getfld (@l_fcity, 11, 30, "W/N", 0, replicate ("X", 15), .t.)
    case yptr = 7
-      f_getfld (@l_fzip, 9, 50, "W/N", 0, "XXXXX-XXXX", .t.)
+      f_getfld (@l_fstate, 11, 46, "W/N", 0, replicate ("!", 2), .t.)
    case yptr = 8
-      f_getfld (@l_fphone, 10, 30, "W/N", 0, "999-999-9999", .t.)
+      f_getfld (@l_fzip, 11, 50, "W/N", 0, "XXXXX-XXXX", .t.)
    case yptr = 9
-      f_getfld (@l_fcinsur1, 11, 30, "W/N", 0, replicate ("X", 20), .t.)
+      f_getfld (@l_fphone, 12, 30, "W/N", 0, "999-999-9999", .t.)
    case yptr = 10
-      f_getfld (@l_fshop, 11, 52, "W/N", 0, replicate ("!", 2), .t.)
+      f_getfld (@l_fcinsur1, 13, 30, "W/N", 0, replicate ("X", 20), .t.)
    case yptr = 11
-      f_getfld (@ydate1, 12, 30, "W/N", 0, "99/99/99", .t.)
+      f_getfld (@l_fshop, 13, 52, "W/N", 0, replicate ("!", 2), .t.)
+   case yptr = 12
+      f_getfld (@ydate1, 14, 30, "W/N", 0, "99/99/99", .t.)
       l_fexp1 = ctod (ydate1)
       if .not. f_valid (f_expdate (l_fexp1) ;
          .or. (empty(l_fcinsur1).and.empty(l_fexp1)),  ; 
                "Warning! Date Expired!")
          loop
       endif
-   case yptr = 12
-      f_getfld (@ydate2, 12, 40, "W/N", 0, "99/99/99", .t.)
+   case yptr = 13
+      f_getfld (@ydate2, 14, 42, "W/N", 0, "99/99/99", .t.)
       l_fcexp1 = ctod (ydate2)
    endcase
    ykey = lastkey ()
-   if (ykey = 24 .or. ykey = 13) .and. yptr < 12
+   if (ykey = 24 .or. ykey = 13) .and. yptr < 13
       yptr = yptr + 1
    elseif ykey = 5 .and. yptr > 1
       yptr = yptr - 1
@@ -1724,6 +1892,10 @@ setcolor (gbluecolor)
 return .t.
 
 * ==================================
+* 08.21.11: use dollar convention
+*   i.e. 9 days = 1 week + 2 extra day (not daily rate which is usually weekly/4 )
+*        note: extra day is stored as fxdlychg (*new field) 
+* --
 function rrvestchg
 
 private y1, y2, y3, yto, yti, yrtot, yfdays, yfhr
@@ -1757,18 +1929,26 @@ l_fdly = yydays
 l_fcdwdays = ydaychg     && use by surchg formaula
 l_fpaidays = ydaychg
 
-if (l_fhr * l_fhrchg) >= l_fdlychg .and. l_fdlychg > 0
-   l_fdly = l_fdly + 1
-   l_fhr = 0
+* --08.21.11: USE extra day rate from dollar res if available if rental days > 7 days
+if l_fdly > 7
+   if (l_fhr * l_fhrchg) >= l_fxdlychg .and. l_fxdlychg > 0
+      l_fdly = l_fdly + 1
+      l_fhr = 0
+   endif
+else
+   if (l_fhr * l_fhrchg) >= l_fdlychg .and. l_fdlychg > 0
+      l_fdly = l_fdly + 1
+      l_fhr = 0
+   endif
 endif
-
+* --
 store 99999.99 to ytotd, ytotw, ytotm, yrtot
 
 yfdays = l_fdly
 yfhr = l_fhr              && save for week/month calc.
 
 * estimate daily chg 01/07/95:(edc)
-if l_fdlychg > 0.00
+if l_fdlychg > 0.00 
    ytotd = l_fdly * l_fdlychg + l_fhr * l_fhrchg 
    yrtot = ytotd
 endif
@@ -1876,5 +2056,117 @@ ytot2 = if (gsurtx, 0.00, l_fsurchg) + if (gsurtx1, 0.00, l_fsurchg1)
 ytotal = round (ytot1 + ytot2 + l_ftaxtot, 2)
 
 return ytotal
+
+* -----------------------------
+* email resv
+*------------------------------
+procedure mailresv
+
+if f_confirm ("Do you want to email this reservation? [Y/N]", "YN") = "N"
+   return
+endif
+
+setcolor (gsubcolor)
+
+* --10.18.10: add add'l fields for noshow, cxl here...
+yscn = f_box (13, 10, 16, 73)
+yemail = rares->femail
+@ 14, 11 say "Email:"
+do while .t.
+   @ 14, 18 get yemail picture replicate ("x", 50) ;      && 10.18.10 increase to 50
+      valid f_valid (f_goodem (yemail, .f.), "Invalid email address ...")   && cannot enter NA as valid email
+   if f_rd () = 27
+      exit
+   endif
+   * --10.18.10
+   ykeyin = f_confirm ("[C]onfirm   [E]dit   [I]gnore", "CEI")
+   if ykeyin = "C"
+
+      select rares
+      reclock ()
+      replace femail with yemail, femdate with date()     && 11.08.10
+      commit
+      unlock
+
+      * update gempath+"rezmsg.dbf"
+      yfil = gempath + "rezmsg.dbf"
+      if file (yfil)
+         ydays = l_fdatein - l_fdateout
+         do case
+         case ydays > 4 .and. l_fwkchg > 0
+		    if l_fwkmlg > 0 .or. l_fdlymlg > 0
+               yrate = [$ ] + alltrim(str(l_fdlychg,8,2)) + [ per day. ] + ;
+					   [$ ] + alltrim(str(l_fwkchg,8,2)) + [ per week. ] + ;
+			           [Includes ]+str(l_fdlymlg,3)+[ free miles per day with a ] + ;
+                       str(l_fmlgchg,4,2)+[ per mile charge for extra miles.]					   
+			else
+               yrate = [$ ] + alltrim(str(l_fdlychg,8,2)) + [ per day. ] + ;
+			           [$ ] + alltrim(str(l_fwkchg,8,2)) + [ per week. Unlimited mileage.]
+			endif 
+         otherwise
+		    if l_fdlymlg > 0
+                yrate = [$ ] + alltrim(str(l_fdlychg,8,2)) + [ per day. ] + ;
+			           [Includes ]+str(l_fdlymlg,3)+[ free miles per day with a ] + ;
+                       str(l_fmlgchg,4,2)+[ per mile charge for extra miles.]					   
+			else
+               yrate = [$ ] + alltrim(str(l_fdlychg,8,2)) + [ per day. Unlimited mileage.]
+			endif 
+         endcase
+               
+         yname = trim(l_ffname)+[ ]+trim(l_flname)
+         * -- get est. charges
+         l_fsurchg = 0
+         l_fsurchg1 = 0
+         l_ftaxtot = 0
+         yestchg = rrvestchg ()
+         * -- 12.30.10
+         *if l_fresvstat = "C"
+         *   ystatus = "CANCELLED"
+         *elseif l_fresvstat = "N"
+         *   ystatus = "NO SHOW"
+         *else
+         *   ystatus = l_fresvstat
+         *endif
+         ystatus = l_fresvstat
+         * need to only print last 4 digits of cc #
+         if l_freschg > 0
+            yfld = alltrim(l_fccnum)
+            yfld = l_fcctype + substr(yfld, len(yfld)-3)
+         else
+            yfld = ""
+         endif
+
+         select 0
+         use &yfil
+         reclock ()
+         append blank
+         replace femail with yemail, fresvno with l_fresvno
+         replace fname with yname
+         replace fcartype with l_fclass, fratedesc with yrate     && 04.21.11
+         replace fdateout with dtoc(l_fdateout)+" "+l_ftimeout
+         replace fdatein with dtoc(l_fdatein)+" "+l_ftimein
+         replace fsurchg with l_fsurchg, fsurchg1 with l_fsurchg1
+         replace ftaxtot with l_ftaxtot, ftotal with yestchg
+         replace ffile with if(l_floc='EGE',"ege.htm","jac.htm")
+         * 12.30.10
+         replace fstatus with ystatus, fcxldate with dtoc(l_fcxldate)
+         replace freschg with l_freschg, fccinfo with yfld
+         commit
+         unlock
+         use
+         f_valid (.f., "Email is now in the message queue ...")
+      else
+         f_valid (.f., "Email is not setup ...")
+      endif
+      exit
+   elseif ykeyin = "E"
+      loop
+   else
+      exit
+   endif
+enddo
+select rares
+f_restbox (yscn)
+setcolor (gbluecolor)
 
 

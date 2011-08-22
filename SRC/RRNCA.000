@@ -31,8 +31,34 @@
 * edc: allow more than 1 surcharges
 * 07.09.99: set century on
 * 10.23.01: add email address
+*
+* 12.01.06: capture loc = checkout loc
+*
+* 08.27.08: if fhr > 2 => fdays + 1 (see also rrnec.prg)
+* ------------------------------------------------------------
+* 10.15.08: add add'l charge 5 & 6
+* 11.15.08: add FDUEIN (due in date)
+*           add early due charge
+*           add late add'l daily charge
+* -------------------------------------------------------------
+* 12.21.09: exclude jet center from [ERC]
+* -----
+* 10.18.10: get user id
+* -----
+* 04.28.11: paperless ra
+* 1. mandatory email
+* 2. prompt with current email after confirm before save
+* 3. do not print close ra, instead prompt
+* 4. if no, save ra and exit
+* --
+* 08.18.11: 
+* Calcuation changes to adhere to Dollar convention
+* use daily rate (instead of the extra day rate) for ERC calculation
+* use extended rate (usally daily rate * 15% for example) for extended rental
+* i.e. 5days + 2 extended days = 1 week + 2 extended days
+* Block out Deposit field if freesell is false
 * ===========================================================================
-store space (15) to yitem1, yitem2, yitem3, yitem4
+store space (15) to yitem1, yitem2, yitem3, yitem4, yitem5, yitem6   && 10.15.08
 set century on     && 07.09.99
 yendedit = .f.
 yfreesell = gfreesell
@@ -40,10 +66,41 @@ store 0.00 to ytot1, ytot2
 store 0 to ysyssurchg, ydaychg
 f_clrscn ("Check In Rental Agreement")
 restore from (gmempath + "RAAGRH2") additive
+* -- 10.15.08
+restore from (gmempath + "RAAGRH") additive
+* --
 l_ftrack = space(70)
 l_fpo = .f.            && fuel purchase option  08/29/94
-l_fsur1tot = 0
-l_femail = space(30)   && email address 10.23.01
+
+l_fsurchg = 0          && 03.10.09
+l_fsurchg1 = 0
+
+l_femail = space(50)   && 5.03.11: email address 
+
+* --10.15.08
+l_foitem5 = [    ]
+l_foitem6 = [    ]
+l_forate5 = 0.00
+l_forate6 = 0.00
+l_fodly5 = .f.
+l_fodly6 = .f.
+l_fotax5 = .f.
+l_fotax6 = .f.
+l_fotot5 = 0.00
+l_fotot6 = 0.00
+l_fduein = ctod("")
+* --
+
+* --10.18.10: add get user id
+f_use ("rausr")
+if .not. get_usrid (@l_fid2)
+   return
+endif
+select rausr
+use
+@ 01, 70 say "<" + l_fid2 + "/" + gusrid + ">"    && 10.18.10
+* --
+
 if .not. rrnpkra ("O")
    return
 endif
@@ -118,7 +175,37 @@ do while .t.
          endif
          do case
          case ykey = "C"
-            if f_confirm ("Do you want to print contract? ", "YN") = "Y"
+
+         * -- 05.03.11: default is to send close ra as email
+         clear gets
+         setcolor (gsubcolor)
+         yscn = f_box (13, 10, 16, 73)
+         @ 14, 11 say "email:"
+         do while .t.
+            @ 14, 18 get l_femail picture replicate ("x", 50) ;
+               valid f_valid (f_goodem (l_femail, .t.), "Invalid email address ...")    && [NA] is valid email 
+            if f_rd () = 27
+			   f_valid (.f., "Please enter a valid email or NA")
+		       loop
+		    else
+               exit
+            endif			
+		 enddo	
+		 
+         * update gempath+"ramsg.dbf"
+         yfil = gempath + "ramsg.dbf"
+         if file (yfil) .and. len(trim(l_femail)) > 2     && only send with a valid email
+            select 0
+            use &yfil
+            reclock ()
+            append blank
+            f_replace ()
+         endif
+         f_restbox (yscn)
+         setcolor (gbluecolor)
+		 * -- 05.03.11 
+
+		 if f_confirm ("Do you want to print contract? ", "YN") = "Y"
                * y2k
                set century off
                do rrnprt with "I"
@@ -215,7 +302,10 @@ do while .t.
                   replace ffname with l_ffname, flname with l_flname
                   replace fmname with &ystr9      && 11/11/93 card swipe or manual enter
                   replace floc with l_floc, frano with l_frano
-                  replace frloc with l_frloc
+                  * 12.01.06: capture loc = checkout loc
+                  * replace frloc with l_frloc
+                  replace frloc with l_floc
+
                   if &ystr5 < 0.00
                      replace ftranstyp with "C"
                   elseif .not. empty (&ystr4) .and. &ystr7 = __gccspecauth
@@ -233,6 +323,13 @@ do while .t.
             f_findblank ()
             l_fdrop = 0.00
             l_frectype = if (l_floc <> l_frloc, "F", "C")
+
+            * 08.27.08:
+            if l_fhr > 2
+               l_fdays = l_fdays + 1
+            endif
+            * 08.27.08
+
             f_replace ()
             f_fupdate ("A")
             if l_floc <> l_frloc
@@ -344,23 +441,48 @@ endif
 ******************************
 procedure fgetrrnca
 parameters xnew
-private yedit
+private yedit, yscn, ycolor
 
 if xnew
    if .not. empty (l_fremark)
-      f_valid (.f., l_fremark)
+      ycolor = setcolor (gsubcolor)
+      yscn = f_box (13, 9, 22, 62)
+      * @ 17, 11 say "Remark"
+      setcolor (gsubget)
+      @ 14, 11 say substr(l_fremark,1,50)
+      @ 15, 11 say substr(l_fremark,51,50)
+      @ 16, 11 say substr(l_fremark,101,50)
+      @ 17, 11 say substr(l_fremark,151,50)
+      @ 18, 11 say substr(l_fremark,201,50)
+      @ 19, 11 say substr(l_fremark,251,50)
+      @ 20, 11 say substr(l_fremark,301,50)
+      @ 21, 11 say substr(l_fremark,351,50)
+      setcolor (ycolor)
+      f_popup ("Press Any Key to Continue...", .t.)
+      f_restbox (yscn)
    endif
    l_frloc = gloc
-   l_fdatein = date ()
+
+   * -- 10.20.08: schedule return date
+   * l_fduein = l_fdatein   
+   l_fdatein = date ()    && actual return date
+   * --
+
    l_ftimein = time ()
    l_fmlgin = l_fmlgout
    l_fmlg = 0
    l_ffuelin = l_ffuelout
    l_femlg = l_femlgin - l_femlgout
-   l_fid2 = gusrid
+   * l_fid2 = gusrid     && 10.18.10: get userid instead of gusrid
 endif
+
 @ 1, 16 say l_frano picture replicate ([9], 6)
 @ 1, 36 say l_flname
+
+* -- 10.20.08
+@ 2, 16 say l_fduein
+* --
+
 @ 2, 36 say l_ffname
 @ 3, 16 say l_floc
 @ 3, 34 say l_fdateout
@@ -370,6 +492,7 @@ endif
 @ 4, 34 get l_fdatein valid f_valid (f_y2k(@l_fdatein) .and. l_fdatein >= l_fdateout)
 @ 4, 45 get l_ftimein picture [99:99] valid rrnca1 ()
 @ 7, 16 say l_funit picture replicate ([!], 10)
+
 @ 8, 16 get l_fmlgin picture replicate ([9], 6) valid rrnca2 ()
 @ 9, 16 say l_fmlgout picture replicate ([9], 6)
 @ 10, 16 say l_fmlg picture replicate ([9], 6)
@@ -430,7 +553,11 @@ ENDIF
 @ 3, 66 get l_fgastyp pict "!" valid rrnca351 ()
 @ 3, 71 get l_ffueltot picture [99999.99] valid rrnca34 ()    && 01/27/95
 @ 4, 71 get l_fdmgtot picture [99999.99] valid rrnca35 ()
-@ 6, 71 get l_fdepamt picture [99999.99] valid rrnca36 ()
+* --08.18.11: only for supervisor
+if yedit 
+   @ 6, 71 get l_fdepamt picture [99999.99] valid rrnca36 ()
+endif
+* --
 @ 7, 71 say l_famtdue picture [99999.99]
 *
 @ 10, 57 get l_fpaytyp1 picture [!!!] valid rrnca38 ()
@@ -519,15 +646,27 @@ endif
 do rrncacal1
 return .t.
 
-
-******************************
+*-----------------------------------------
 * time and mileage calculation
-******************************
+* 11.01.08: add early rental fee calc
+*           add add'l date rental fee calc
+*------------------------------------------
 procedure rrncacal1
 private y1, y2, y3, yto, yti, yrtot, yfdays, yfhr
 private ymhr, ytotd, ytotw, ytotm, yrdays, yrwk, yrmlg, yrmlgd, yrmlgw, yrmlgm
 
 f_popup ("Please Wait While Calculating Time & Mileage Charges...", .f.)
+
+* initialize variables
+l_fdly = 0
+l_fwkd = 0
+l_fwkdtot = 0
+l_fdlytot = 0
+l_fwktot = 0
+l_fmthtot = 0
+l_fhrtot = 0
+* --
+
 if l_fcalday
    yto = 0
    yti = 0
@@ -559,11 +698,13 @@ else
    else
       l_fdays = 0
    endif
-   ***
-   if l_fdays < 1  .and. l_fdlychg > 0      && 06/01/94(edc) for limo rental
-      l_fdays = 1
-      ymins = 0
-   endif
+   * -- 11.01.08
+   *if l_fdays < 1  .and. l_fdlychg > 0      && 06/01/94(edc) for limo rental
+   *   l_fdays = 1
+   *   ymins = 0
+   *endif
+   * --
+
 endif
 
 if ygraceins
@@ -604,30 +745,28 @@ if (l_fhr * l_fhrchg) >= l_fdlychg .and. l_fdlychg > 0
    l_fhr = 0
 endif
 
+* -- 11.15.08: check if add'l date rate apply
 l_fwkd = 0
-if l_fwkdday .and. l_fwkdchg > 0.00
-   if l_fdly >= l_fwkdmin
-      if l_fdly < l_fwkdmax
-         l_fwkd = l_fdly
-         l_fwkdtot = l_fwkdchg * l_fdly
-         l_fdly = 0
-         if (l_fhr * l_fhrchg) >= l_fwkdchg
-            l_fwkd = l_fwkd + 1
-            l_fhr = 0
-         endif
+if l_fdatein > l_fduein
+   l_fwkd = l_fdly - (l_fduein-l_fdateout)
+endif
+
+if l_fwkd > 0
+   if l_fwkdchg <= 0        && calc add'l date rate if missing ...
+      if gadlychg > 0
+         l_fwkdchg = l_fdlychg + gadlychg      
       else
-         l_fwkd = l_fwkdmax
-         l_fdly = l_fdly - l_fwkdmax
-         l_fwkdtot = l_fwkdchg * l_fwkdmax
+         l_fwkdchg = round(l_fdlychg * (1 + gadlypct / 100), 2)
       endif
-   elseif l_fdly = (l_fwkdmin - 1) .and. ;
-         (l_fdly * l_fdlychg + l_fhr * l_fhrchg) >= (l_fwkdmin * l_fwkdchg)
-      l_fwkd = l_fwkdmin
-      l_fwkdtot = l_fwkd * l_fwkdchg
-      l_fdly = 0
-      l_fhr = 0
+   endif
+   if l_fwkdchg > 0
+      l_fwkdtot = l_fwkdchg * l_fwkd    && use add'l date rate
+      l_fdly = l_fdly - l_fwkd
+   else
+      l_fwkd = 0
    endif
 endif
+* -- 11.15.08
 
 store 99999.99 to ytotd, ytotw, ytotm, yrtot
 
@@ -844,6 +983,43 @@ endif
 l_fhrtot = l_fhr * l_fhrchg
 l_ftmetot = l_fdlytot + l_fwkdtot + l_fwktot + l_fmthtot + l_fhrtot
 
+* --12.21.09: exclude jet center (RA begin with [3]) from [ERC]
+if l_frloc = [EGE] .and. substr(alltrim(str(l_frano)),1,1) = [3]
+   && do not charge [ERC]
+else
+* --11.15.08: check if early rental fee apply by compare to est T&M in open RA
+* if l_ftmechg > l_ftmetot
+* -- 01.12.09: grace = 1 day per allen
+if l_ftmechg - l_ftmetot > l_fdlychg .or. ;
+   l_fduein - l_fdatein >= 2                 && 01.14.09: return >2 days early
+   * -- Apply early rental charge as [ERC]
+   for i = 1 to 6      && add 2 add'l charge
+      ystr1 = "L_FOITEM" + str (i, 1)
+      if  empty(&ystr1) .or. &ystr1 = [ERC]
+         &ystr1 = [ERC ]
+         ystr2 = "L_FORATE" + str(i,1)
+         &ystr2 = l_ftmechg - l_ftmetot
+         exit
+      endif
+   next
+else
+   * -- zero out ERC just in case
+   for i = 1 to 6      && add 2 add'l charge
+      ystr1 = "L_FOITEM" + str (i, 1)
+      if &ystr1 = [ERC]
+         &ystr1 = [ERC ]
+         ystr2 = "L_FORATE" + str(i,1)
+         &ystr2 = 0
+         exit
+      endif
+   next
+endif
+* --
+
+endif
+* --12.21.09
+
+* calculate mileage charge 
 l_fmlgfree = 0
 if l_fwkd > 0
    if l_fwkdmlg = 0
@@ -902,7 +1078,9 @@ l_fpo = .f.                && fuel purchase option
 
 yothcnt = 1
 ysurflag = .t.
-for i = 1 to 4             && 09/30/94 (edc) fix calc. on add'l chg
+
+* -- 10.15.08: for i = 1 to 4
+for i = 1 to 6      && add 2 add'l charge
    ystr1 = "L_FOITEM" + str (i, 1)
    if  &ystr1 = "FPO"     && 08/29/94: fuel purchase option
       ystr2 = "L_FORATE" + str (i, 1)
@@ -910,7 +1088,7 @@ for i = 1 to 4             && 09/30/94 (edc) fix calc. on add'l chg
    elseif &ystr1 = "SUR1"
       ysurflag = .f.
       ystr1 = "L_FORATE" + str (i, 1)
-      l_fsur1tot = &ystr1
+      * l_fsurchg1 = &ystr1     && 03.10.09: edc
    endif
    *
    if .not. empty(&ystr1)
@@ -926,7 +1104,7 @@ for i = 1 to 4             && 09/30/94 (edc) fix calc. on add'l chg
    endif
    ystr2 = "L_FOTOT" + str (i, 1)
    &ystr2 = ychg
-   * edc:07/06/92
+
    ystr1 = "L_FOTAX" + str (i, 1)
    if &ystr1
       l_fothtot1 = l_fothtot1 + ychg
@@ -935,20 +1113,21 @@ for i = 1 to 4             && 09/30/94 (edc) fix calc. on add'l chg
    endif
 next 
 
-* 09.29.97 additional surchg (note: exempt vehicle)
-if .not. empty(gsurchg1) .and. yothcnt <= 4 .and. ysurflag 
+* -- 09.29.97 additional surchg (note: exempt vehicle)
+* -- 10.15.08 if .not. empty(gsurchg1) .and. yothcnt <= 4 .and. ysurflag 
+if .not. empty(gsurchg1) .and. yothcnt <= 6 .and. ysurflag     && -- 10.15.08
    ychg = &gsurchg1
    ystr1 = "L_FOITEM" + str (yothcnt, 1)
-   &ystr1 = "SUR1"     && 08/29/94: fuel purchase option
+   &ystr1 = "SUR1"     
    ystr1 = "L_FODLY" + str (yothcnt, 1)
    &ystr1 = .f.
    ystr1 = "L_FORATE" + str (yothcnt, 1)
    &ystr1 = ychg
    ystr1 = "L_FOTOT" + str (yothcnt, 1)
    &ystr1 = ychg
-   l_fsur1tot = ychg
+   * l_fsurchg1 = ychg    && 03.10.09: edc
    ystr1 = "L_FOTAX" + str (yothcnt, 1)
-   &ystr1 = .f.                              && taxable ?
+   &ystr1 = gsurtx1   && 04.30.07
    if &ystr1
       l_fothtot1 = l_fothtot1 + ychg
    else
@@ -1313,54 +1492,13 @@ if l_fpaycod1 = 1 .and. good_cctype (l_fpaytyp1, @yauthonly1)
          fccnum
       if frectype = __gccauth
          yauthtot = yauthtot + if (ftranstyp = "C", -1, 1) * abs (fauthamt)
-         yauthstat1 = fauthstat          && 10.25.99: retain network id
          if empty (l_fauthcd1)
             l_fauthcd1 = fauthcode
          endif
       endif
       skip
    enddo
-* 11.13.06: disable credit reversal for VA: per allen
-*   if l_fpaytyp1=[VA] .and. abs(yauthtot - l_famt1) > .15 * yauthtot ;
-*      .and. l_famt1 > 0
-   if l_fpaytyp1=[XX] .and. abs(yauthtot - l_famt1) > .15 * yauthtot ;
-      .and. l_famt1 > 0
-      yauthcd = l_fauthcd1
-      private yfnd
-      yfnd = .f.
-      f_use ("RACRED", 5)    && by ccnum
-      seek l_fccnum1
-      do while .not. eof () .and. fccnum = l_fccnum1
-         if ftranstyp = "S" .and. frectype = 2 .and. .not.empty(fauthcode) ;
-            .and. fmname = "C"     && must be swipe to do incr/reverse auth.
-            yfnd = .t.
-            exit
-         endif
-         skip
-      enddo
-      if yfnd
-         if yauthtot > l_famt1
-            * reverse auth.
-            yret = newauth ("R", l_fccnum1, l_fccexp1, l_famt1, @l_fauthcd1, @yauthstat1)
-         else
-            * incr. auth
-            yret = newauth ("I", l_fccnum1, l_fccexp1, l_famt1, @l_fauthcd1, @yauthstat1)
-         endif
-      else
-         yret = newauth (if (l_famt1 >= 0.00, "S", "C"), l_fccnum1, ;
-         l_fccexp1, l_famt1, @l_fauthcd1, @yauthstat1)
-      endif
-      l_fauthcd1 = yauthcd      && retain org. auth code
-      if yret = "D"
-         * yrectyp1 = __gccauth
-         yrectyp1 = __gccuncap     && 11.08.99
-      elseif yret = "E"
-         yrectyp1 = __gccautherr
-      else
-         * yrectyp1 = __gccunauth
-         yrectyp1 = __gccspecauth  && 11.08.99
-      endif
-   elseif abs(yauthtot - l_famt1) > .15 * yauthtot
+   if yauthtot < l_famt1
       if raagr->fhldamt >= l_famt1 .and. l_fccnum1 = raagr->fccnum1 .and. ;
             .not. empty (raagr->fauthcd1) .and. (l_floc <> l_frloc)
          l_fauthcd1 = raagr->fauthcd1
@@ -1375,10 +1513,10 @@ if l_fpaycod1 = 1 .and. good_cctype (l_fpaytyp1, @yauthonly1)
          replace fmname with yccswipe1
          *
          replace floc with l_floc, frano with l_frano
-         replace frloc with l_frloc, ftranstyp with "S"
+         replace frloc with l_floc, ftranstyp with "S"     && 12.01.06: use l_floc
          commit
          unlock
-         * f_fupdate ("A")
+         f_fupdate ("A")
          yrectyp1 = __gccuncap
       else
          yauthcd = l_fauthcd1
@@ -1400,10 +1538,10 @@ if l_fpaycod1 = 1 .and. good_cctype (l_fpaytyp1, @yauthonly1)
             replace fmname with gccswipe
             *
             replace floc with l_floc, frano with l_frano
-            replace frloc with l_frloc, ftranstyp with "S"
+            replace frloc with l_floc, ftranstyp with "S"   && 12.01.06: use l_floc
             commit
             unlock
-            * f_fupdate ("A")
+            f_fupdate ("A")
             yrectyp1 = __gccuncap
          elseif yret = "E"
             yrectyp1 = __gccautherr
@@ -1511,7 +1649,7 @@ if l_fpaycod2 = 1 .and. good_cctype (l_fpaytyp2, @yauthonly2)
          replace fmname with yccswipe1         && use old cc1
          *
          replace floc with l_floc, frano with l_frano
-         replace frloc with l_frloc, ftranstyp with "S"
+         replace frloc with l_floc, ftranstyp with "S"      && 12.01.06: use l_floc
          commit
          unlock
          f_fupdate ("A")
@@ -1536,7 +1674,7 @@ if l_fpaycod2 = 1 .and. good_cctype (l_fpaytyp2, @yauthonly2)
             replace fmname with gccswipe
             *
             replace floc with l_floc, frano with l_frano
-            replace frloc with l_frloc, ftranstyp with "S"
+            replace frloc with l_floc, ftranstyp with "S"    && 12.01.06: use l_floc
             commit
             unlock
             f_fupdate ("A")
@@ -1650,7 +1788,7 @@ if l_fpaycod3 = 1 .and. good_cctype (l_fpaytyp3, @yauthonly3)
          replace fmname with yccswipe1       && use old cc1
          *
          replace floc with l_floc, frano with l_frano
-         replace frloc with l_frloc, ftranstyp with "S"
+         replace frloc with l_floc, ftranstyp with "S"      && 12.01.06: use l_floc
          commit
          unlock
          f_fupdate ("A")
@@ -1675,7 +1813,7 @@ if l_fpaycod3 = 1 .and. good_cctype (l_fpaytyp3, @yauthonly3)
             replace fmname with gccswipe
             *
             replace floc with l_floc, frano with l_frano
-            replace frloc with l_frloc, ftranstyp with "S"
+            replace frloc with l_floc, ftranstyp with "S"    && 12.01.06: use l_floc
             commit
             unlock
             f_fupdate ("A")

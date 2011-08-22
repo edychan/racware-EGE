@@ -285,17 +285,7 @@ if l_foutopt = "D"
    setcolor (gbluecolor)
 elseif l_foutopt = "E"      &&  add email report function
    * --06.21.11
-   yfil = gempath + "emrpt.dbf"
-   if file (yfil)
-      select 0
-      use &yfil
-      reclock ()
-      append blank
-      replace femail with yemail, freport with yrptname
-	  replace ffile with substr(l_filename, at("rr", l_filename))     && i.e. rr123456.txt
-      commit
-      unlock
-      use
+   if f_sndrep (yemail, yrptname, substr(l_filename, at("rr", l_filename)))    && i.e. rr123456.txt
       f_valid (.f., "Email is now in the message queue ...")
    else
       f_valid (.f., "Email is not setup ...")

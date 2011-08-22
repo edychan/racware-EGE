@@ -3073,7 +3073,35 @@ if year (xdate) <= 1920
 endif
 return .t.
 
-* ------------------------------------
+***************************
+* email report interface
+*   xto: email address
+*   xreport: report name
+*   xfile: report file
+* ----
+* 06.22.11
+function f_sndrep
+parameter xto, xreport, xfile
+
+private yfil
+
+yfil = gempath + "emrpt.dbf"
+if file (yfil)
+   select 0
+   use &yfil
+   reclock ()
+   append blank
+   replace femail with xto, freport with xreport
+   replace ffile with xfile     && i.e. rr123456.txt
+   commit
+   unlock
+   use
+   return .t.
+else
+   return .f.
+endif
+
+***************************
 * validate email:
 *   xemail: email addr
 *   xedit: if .t. => allow NA as valid 
@@ -3130,6 +3158,8 @@ otherwise
       elseif ".PRO" $ ystr		 
 	     yok = .t.
       elseif ".INT" $ ystr		 
+	     yok = .t.
+      elseif ".CA" $ ystr		 && Canada
 	     yok = .t.
 	  endif	  
    endif	  

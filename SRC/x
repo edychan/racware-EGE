@@ -1,0 +1,28 @@
+C>SEARCH /rrnestchg/ *.prg
+
+SEARCH  Ver 2.2
+Copyright (C) 1986, 1987, Solid Software, Inc. and Buzzwords International, Inc.
+
+Searching for "rrnestchg"
+ ... ignoring case.
+
+Found in line 180 of file RRNFMU.PRG:
+   yestamt = round (rrnestchg (), 2)      && 03.10.09: use rrnestchg to calculate est chg
+
+Found in line 882 of file RRNFMU.PRG:
+        l_festchg = round (rrnestchg (), 2)      && 03.10.09: use rrnestchg to calculate est chg
+
+Found in line 71 of file RRNOA.PRG:
+* 02.18.09: est. calc (new rrnestchg replace rrncalc)
+
+Found in line 72 of file RRNOA.PRG:
+* 05.06.09: include add'l date estimate (rrnestchg)
+
+Found in line 73 of file RRNOA.PRG:
+* 06.23.09: include surcharge1 in surcharge formula estimate (rrnestchg)
+
+Found in line 1719 of file RRNOA.PRG:
+l_festchg = round (rrnestchg (), 2)
+
+Found in line 2594 of file RRNOA.PRG:
+function rrnestchg

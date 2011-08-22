@@ -135,18 +135,174 @@ enddo
 release all like l_*
 close database
 
+******************************
+* utility for mgmt reports
+function mgmt_hdr
+
+parameters xdisp, xfeed
+private i, yln, ylen, ycol, ydesc
+if xdisp = "P"
+   if xfeed
+      eject
+   else
+      setprc (0, 0)
+      @ 00, 01 say l_cprt
+   endif
+elseif xfeed
+   @ yrow+1, 0 say ""
+   setprc (0, 0)   
+   @ 0, 0 say replicate ("Ä", l_formlen-1)
+else 
+   setprc (0,0)
+endif
+l_page = l_page + 1
+@ 01, 01 say 'DATE: ' + l_date
+@ 01, yc1 say gtitle
+@ 01, yc3 say 'PAGE: ' + str (l_page, 3)
+@ 02, 01 say 'TIME: ' + l_time
+@ 02, yc2 say l_ftitle
+@ 04, 01 say l_header
+yln = 6
+
+return (yln)
+
+**********************************
+* utility for mgmt reports
+function mgmt_end
+parameter xrow
+
+if ydisp = "P"
+   @ xrow + 1, 0 say l_nprt
+   eject
+endif
+
+set device to screen
+set printer to
+set console on
+set print off
+
+if ydisp = "D"
+   set color to
+   clear
+   yfile = gstnpath + "rrout.rpt"
+   run racbrow &yfile
+   setcolor (gbluecolor)
+elseif ydisp = "E"      &&  add email report function
+   * --06.21.11
+   if f_sndrep (yemail, yrptname, substr(l_filename, at("rr", l_filename)))    && i.e. rr123456.txt
+      f_valid (.f., "Email is now in the message queue ...")
+   else
+      f_valid (.f., "Email is not setup ...")
+   endif
+endif
+
+*********************************
+* return report destination for mgmt reports
+function mgmt_option
+private ypick
+
+* 06.21.11: add email report function
+if gemrpt
+   ypick = f_confirm ("[D]isplay on Screen  [P]rint  [F]ile  [E]mail  [Q]uit", "DPFEQ")    && add email
+else
+   ypick = f_confirm ("[D]isplay on Screen  [P]rint  [F]ile  [Q]uit", "DPFQ")    
+endif
+return ypick
+
+***********************************
+* return filename 
+* pass by reference
+function mgmt_getfil
+parameter xfile
+private yfile
+yfile = space(40)
+do while .t.
+   @ 07, 00
+   @ 07, 05 say "File Name: " get yfile 
+   if f_rd() = 27
+      return .f.
+   else
+      ykeyin = f_confirm ("Is this correct [Y/N/Q] ", "YNQ")
+      if ykeyin = "Y"
+         @ 07, 00
+         exit
+      elseif ykeyin = "Q"
+         return .f.
+      endif
+   endif
+enddo
+xfile = yfile
+return .t.
+
+****************************************
+* return email
+* pass by reference
+function mgmt_getem
+parameter xemail, xfile
+private yemail, yfile
+yemail = f_truncate(gemail,40)
+* -- add email function: 06.21.11
+do while .t.
+   @ 07, 00
+   @ 07, 05 say "email: " get yemail pict replicate ("x", 40) valid ;
+     f_valid (f_goodem (yemail, .f.), "Invalid email address ...")     && cannot enter NA as valid email 
+   if f_rd() = 27
+      return .f.
+   else
+      ykeyin = f_confirm ("Is this correct [Y/N/Q] ", "YNQ")
+      if ykeyin = "Y"
+         @ 07, 00
+         yfile = gempath + "rr"+strtran(time(),":","")+".txt"
+         exit
+      elseif ykeyin = "Q"
+         return .f.
+      endif
+   endif
+enddo
+xemail = yemail
+xfile = yfile
+return .t.
+
+*********************************
+* set file destination
+function mgmt_dest 
+parameter xoption, xfile
+
+f_popup ("Creating Report ...")
+if xoption $ "DEF"        && 06.21.11: add Email
+   set device to print
+   set printer to &xfile
+else
+   * set device to print
+   set console off
+   set print on
+   set device to print
+   set printer to lpt1
+endif
+
 **********************************
 procedure mgmt_1
 private y1, y2, yt, yrow, ycol, ystr, ydisp
 private nloc, yloc [10], ytotal [10], yatot[10], yrtot[10]
 private nclass, yclass[25]
-
+private yemail, yrptname
 f_box (02, 05, 04, 78, "You have selected")
 @ 03, 07 say "Vehicle Utilization Report"
 
-ydisp = f_confirm ("[D]isplay on Screen  [P]rint [Q]uit", "DPQ")
+l_filename = space(50)
+yemail = space(40)
+yrptname = "Vehicle Utilization Report"
+ydisp = mgmt_option()
 if ydisp ="Q"
    return
+elseif ydisp = "F"
+   if .not. mgmt_getfil (@l_filename)     && pass by reference
+      return
+   endif  
+elseif ydisp = "E"
+   if .not. mgmt_getem (@yemail, @l_filename)     && pass by reference
+      return
+   endif	  
 endif
 
 f_popup ("Please Wait...")
@@ -255,14 +411,9 @@ yc1 = max (20, int (l_formlen/2) - int (len (gtitle) / 2))
 yc2 = max (20, int (l_formlen/2) - int (len (l_ftitle) / 2))
 yc3 = l_formlen - 12
 
-f_popup ("Creating Report ...")
-if ydisp = "D"
-   yfil=gstnpath+"rrout.rpt"
-   set device to print
-   set printer to &yfil
-else
-   set device to print
-endif
+* -- 06.22.11: Create report here
+l_filename = if(empty(l_filename), gstnpath + "rrout.rpt", l_filename)
+mgmt_dest (ydisp, l_filename)     && set print dest
 
 yrow = mgmt_hdr (ydisp, .f.)
 select mgmt_1
@@ -363,57 +514,6 @@ use
 select mgmt_1t
 use
 
-******************************
-function mgmt_hdr
-
-parameters xdisp, xfeed
-private i, yln, ylen, ycol, ydesc
-if xdisp = "P"
-   if xfeed
-      eject
-   else
-      setprc (0, 0)
-      @ 00, 01 say l_cprt
-   endif
-elseif xfeed
-   @ yrow+1, 0 say ""
-   setprc (0, 0)   
-   @ 0, 0 say replicate ("Ä", l_formlen-1)
-else 
-   setprc (0,0)
-endif
-l_page = l_page + 1
-@ 01, 01 say 'DATE: ' + l_date
-@ 01, yc1 say gtitle
-@ 01, yc3 say 'PAGE: ' + str (l_page, 3)
-@ 02, 01 say 'TIME: ' + l_time
-@ 02, yc2 say l_ftitle
-@ 04, 01 say l_header
-yln = 6
-
-return (yln)
-
-**********************************
-function mgmt_end
-parameter xrow
-
-if ydisp = "P"
-   @ xrow + 1, 0 say l_nprt
-   eject
-endif
-
-set device to screen
-set printer to
-set console on
-set print off
-if ydisp = "D"
-   yfil=gstnpath+"rrout.rpt"
-   setcolor ("W/N")
-   clear
-   run racbrow &yfil
-   setcolor (gbluecolor)
-endif
-
 *************************************
 procedure mgmt_2
 private ydate, ymo, yyr, ystart, yend, ydays, ystatus, yln, ylcnt, ydisp
@@ -422,7 +522,6 @@ private ylogic, y1, y2, y3, ytotal, ycars
 f_box (02, 05, 04, 78, "You have selected")
 @ 03, 07 say "Monthly Vehicle Tally Report"
 ydate = substr(dtoc(date()),1,2)+[/] + substr(dtoc(date()),7,2)
-ydisp = "D"
 @ 07, 03 say "Month....." get ydate pict "99/99" 
 if f_rd () = 27
   return
@@ -430,11 +529,23 @@ endif
 
 ymo = substr (ydate,1,2)
 yyr = substr (ydate,4,2)
-ydisp = f_confirm ("[D]isplay on Screen  [P]rint [Q]uit", "DPQ")
+* --06.22.11
+l_filename = space(50)
+yemail = space(40)
+yrptname = "Vehicle Tally Report"
+ydisp = mgmt_option()
 if ydisp ="Q"
    return
+elseif ydisp = "F"
+   if .not. mgmt_getfil (@l_filename)     && pass by reference
+      return
+   endif  
+elseif ydisp = "E"
+   if .not. mgmt_getem (@yemail, @l_filename)     && pass by reference
+      return
+   endif	  
 endif
-
+* --
 f_popup ("Please Wait...")
 
 ystart = ctod(ymo+"/01/"+yyr) 
@@ -581,14 +692,9 @@ yc1 = max (20, int (l_formlen/2) - int (len (gtitle) / 2))
 yc2 = max (20, int (l_formlen/2) - int (len (l_ftitle) / 2))
 yc3 = l_formlen - 12
 
-f_popup ("Creating Report ...")
-if ydisp = "D"
-   yfil=gstnpath+"rrout.rpt"
-   set device to print
-   set printer to &yfil
-else
-   set device to print
-endif
+* -- 06.22.11: Create report here
+l_filename = if(empty(l_filename), gstnpath + "rrout.rpt", l_filename)
+mgmt_dest (ydisp, l_filename)     && set print dest
 
 yrow = mgmt_hdr (ydisp, .f.)
 
@@ -658,6 +764,25 @@ private ystart, yend, yclass, yfnd, ystatus, yln, ylcnt, ydisp, ylogic
 
 f_box (02, 05, 04, 78, "You have selected")
 @ 03, 07 say "Vehicle Revenue Report"
+
+* -- 06.22.11
+l_filename = space(50)
+yemail = space(40)
+yrptname = "Vehicle Utilization Report"
+ydisp = mgmt_option()
+if ydisp ="Q"
+   return
+elseif ydisp = "F"
+   if .not. mgmt_getfil (@l_filename)     && pass by reference
+      return
+   endif  
+elseif ydisp = "E"
+   if .not. mgmt_getem (@yemail, @l_filename)     && pass by reference
+      return
+   endif	  
+endif
+
+* --
 yclass = space (4)
 ystart = date()
 yend = date()
@@ -670,10 +795,6 @@ if f_rd () = 27
   return
 endif
 
-ydisp = f_confirm ("[D]isplay on Screen  [P]rint [Q]uit", "DPQ")
-if ydisp ="Q"
-   return
-endif
 
 f_popup ("Please Wait...")
 if .not. file (gstnpath + "mgmt_3.dbf")
@@ -712,7 +833,7 @@ if .not. file (gstnpath + "mgmt_3.dbf")
    append blank
    replace field_name with "FDAYS"
    replace field_type with "N"
-   replace field_len with 4
+   replace field_len with 6
    replace field_dec with 0
    use
    create (gstnpath + "mgmt_3") from (gstnpath + "stru")
@@ -777,14 +898,9 @@ yc1 = max (20, int (l_formlen/2) - int (len (gtitle) / 2))
 yc2 = max (20, int (l_formlen/2) - int (len (l_ftitle) / 2))
 yc3 = l_formlen - 12
 
-f_popup ("Creating Report ...")
-if ydisp = "D"
-   yfil=gstnpath+"rrout.rpt"
-   set device to print
-   set printer to &yfil
-else
-   set device to print
-endif
+* -- 06.22.11: Create report here
+l_filename = if(empty(l_filename), gstnpath + "rrout.rpt", l_filename)
+mgmt_dest (ydisp, l_filename)     && set print dest
 
 yrow = mgmt_hdr (ydisp, .f.)
 
@@ -825,6 +941,25 @@ afill (ydow2, 0)
 
 f_box (02, 05, 04, 78, "You have selected")
 @ 03, 07 say "RA Frequency Report"
+
+*-- 06.22.11
+l_filename = space(50)
+yemail = space(40)
+yrptname = "RA Frequency Report"
+ydisp = mgmt_option()
+if ydisp ="Q"
+   return
+elseif ydisp = "F"
+   if .not. mgmt_getfil (@l_filename)     && pass by reference
+      return
+   endif  
+elseif ydisp = "E"
+   if .not. mgmt_getem (@yemail, @l_filename)     && pass by reference
+      return
+   endif	  
+endif
+* --
+
 yloc = gloc
 ystart = date()
 yend = date()
@@ -838,11 +973,6 @@ yshow = "D"
         f_valid (yshow $ "S;D")
 if f_rd () = 27
   return
-endif
-
-ydisp = f_confirm ("[D]isplay on Screen  [P]rint [Q]uit", "DPQ")
-if ydisp ="Q"
-   return
 endif
 
 f_popup ("Please Wait...")
@@ -943,14 +1073,9 @@ yc1 = max (20, int (l_formlen/2) - int (len (gtitle) / 2))
 yc2 = max (20, int (l_formlen/2) - int (len (l_ftitle) / 2))
 yc3 = l_formlen - 12
 
-f_popup ("Creating Report ...")
-if ydisp = "D"
-   yfil=gstnpath+"rrout.rpt"
-   set device to print
-   set printer to &yfil
-else
-   set device to print
-endif
+* -- 06.22.11: Create report here
+l_filename = if(empty(l_filename), gstnpath + "rrout.rpt", l_filename)
+mgmt_dest (ydisp, l_filename)     && set print dest
 
 yrow = mgmt_hdr (ydisp, .f.)
 
@@ -1018,6 +1143,25 @@ private yrano1, yrano2, yloc, yfnd, ystatus, yln, ylcnt, ydisp
 
 f_box (02, 05, 04, 78, "You have selected")
 @ 03, 07 say "Missing RA Report"
+
+* -- 06.22.11
+l_filename = space(50)
+yemail = space(40)
+yrptname = "Missing RA Report"
+ydisp = mgmt_option()
+if ydisp ="Q"
+   return
+elseif ydisp = "F"
+   if .not. mgmt_getfil (@l_filename)     && pass by reference
+      return
+   endif  
+elseif ydisp = "E"
+   if .not. mgmt_getem (@yemail, @l_filename)     && pass by reference
+      return
+   endif	  
+endif
+* --
+
 yloc = gloc
 yrano1 = 0
 yrano2 = 0
@@ -1027,11 +1171,6 @@ yrano2 = 0
 @ 08, 3 say "From RA # " get yrano1 pict "999999"
 @ 09, 3 say "To RA #   " get yrano2 pict "999999"
 if f_rd () = 27
-   return
-endif
-
-ydisp = f_confirm ("[D]isplay on Screen  [P]rint [Q]uit", "DPQ")
-if ydisp ="Q"
    return
 endif
 
@@ -1054,14 +1193,11 @@ f_use ("RAAGR")
 f_use ("RAAGRH")
 yln = 0
 ylcnt = 0
-f_popup ("Creating Report ...")
-if ydisp = "D"
-   yfil=gstnpath+"rrout.rpt"
-   set device to print
-   set printer to &yfil
-else
-   set device to print
-endif
+
+* -- 06.22.11: Create report here
+l_filename = if(empty(l_filename), gstnpath + "rrout.rpt", l_filename)
+mgmt_dest (ydisp, l_filename)     && set print dest
+
 for n = yrano1 to yrano2
    yfnd = .f.
    ystatus = "MISSING"
@@ -1129,24 +1265,11 @@ for n = yrano1 to yrano2
       endif
    *endif
 next
-if yln > 0 .and. ydisp = "P"
-   eject
-endif
 select raagrh
 use
 select raagr
 use
-set device to screen
-set printer to
-set console on
-set print off
-if ydisp = "D"
-   yfil=gstnpath+"rrout.rpt"
-   setcolor ("W/N")
-   clear
-   run racbrow &yfil
-   setcolor (gbluecolor)
-endif
+mgmt_end (ylcnt)
 
 **********************************
 procedure mgmt_6
@@ -1154,6 +1277,24 @@ private ystart, yend, ytnm, yfnd, ystatus, yln, ylcnt, ydisp, ylogic
 
 f_box (02, 05, 04, 78, "You have selected")
 @ 03, 07 say "Travel Agent Commission Report"
+* -- 06.22.11
+l_filename = space(50)
+yemail = space(40)
+yrptname = "Travel Agent Commission Report"
+ydisp = mgmt_option()
+if ydisp ="Q"
+   return
+elseif ydisp = "F"
+   if .not. mgmt_getfil (@l_filename)     && pass by reference
+      return
+   endif  
+elseif ydisp = "E"
+   if .not. mgmt_getem (@yemail, @l_filename)     && pass by reference
+      return
+   endif	  
+endif
+* --
+
 ystart = date()
 yend = date()
 
@@ -1162,11 +1303,6 @@ yend = date()
   f_valid (f_y2k (@yend) .and. yend >= ystart)
 if f_rd () = 27
   return
-endif
-
-ydisp = f_confirm ("[D]isplay on Screen  [P]rint [Q]uit", "DPQ")
-if ydisp ="Q"
-   return
 endif
 
 f_popup ("Please Wait...")
@@ -1290,14 +1426,9 @@ yc1 = max (20, int (l_formlen/2) - int (len (gtitle) / 2))
 yc2 = max (20, int (l_formlen/2) - int (len (l_ftitle) / 2))
 yc3 = l_formlen - 12
 
-f_popup ("Creating Report ...")
-if ydisp = "D"
-   yfil=gstnpath+"rrout.rpt"
-   set device to print
-   set printer to &yfil
-else
-   set device to print
-endif
+* -- 06.22.11: Create report here
+l_filename = if(empty(l_filename), gstnpath + "rrout.rpt", l_filename)
+mgmt_dest (ydisp, l_filename)     && set print dest
 
 yrow = mgmt_hdr (ydisp, .f.)
 
@@ -1366,6 +1497,25 @@ private yseq   && 11.11.09
 
 f_box (02, 05, 04, 78, "You have selected")
 @ 03, 07 say "Additional Revenue by Agent Report"
+
+* --06.22.11
+l_filename = space(50)
+yemail = space(40)
+yrptname = "Additional Revenue by Agent Report"
+ydisp = mgmt_option()
+if ydisp ="Q"
+   return
+elseif ydisp = "F"
+   if .not. mgmt_getfil (@l_filename)     && pass by reference
+      return
+   endif  
+elseif ydisp = "E"
+   if .not. mgmt_getem (@yemail, @l_filename)     && pass by reference
+      return
+   endif	  
+endif
+* --
+
 ystart = date()
 yend = date()
 yac1 = space(4)
@@ -1407,11 +1557,6 @@ yseq = 0            && 11.13.09: ra filter default is ALL
 @ 11, 03 say "Detail [Y/N]... " get ydetail pict "!" valid f_valid (ydetail $ "YN")
 if f_rd () = 27
   return
-endif
-
-ydisp = f_confirm ("[D]isplay on Screen  [P]rint [Q]uit", "DPQ")
-if ydisp ="Q"
-   return
 endif
 
 f_popup ("Please Wait...")
@@ -1756,14 +1901,9 @@ yc1 = max (20, int (l_formlen/2) - int (len (gtitle) / 2))
 yc2 = max (20, int (l_formlen/2) - int (len (l_ftitle) / 2))
 yc3 = l_formlen - 12
 
-f_popup ("Creating Report ...")
-if ydisp = "D"
-   yfil=gstnpath+"rrout.rpt"
-   set device to print
-   set printer to &yfil
-else
-   set device to print
-endif
+* -- 06.22.11: Create report here
+l_filename = if(empty(l_filename), gstnpath + "rrout.rpt", l_filename)
+mgmt_dest (ydisp, l_filename)     && set print dest
 
 yrow = mgmt_hdr (ydisp, .f.)
 
@@ -1928,6 +2068,25 @@ private ystart, yend, ycode, ytnm, yfnd, ystatus, yln, ylcnt, ydisp, ylogic
 
 f_box (02, 05, 04, 78, "You have selected")
 @ 03, 07 say "Additional Revenue by DBR Report"
+
+* -- 06.22.11
+l_filename = space(50)
+yemail = space(40)
+yrptname = "Additional Revenue by DBR Report"
+ydisp = mgmt_option()
+if ydisp ="Q"
+   return
+elseif ydisp = "F"
+   if .not. mgmt_getfil (@l_filename)     && pass by reference
+      return
+   endif  
+elseif ydisp = "E"
+   if .not. mgmt_getem (@yemail, @l_filename)     && pass by reference
+      return
+   endif	  
+endif
+* --
+
 yloc = gloc
 ydbrno = 0
 @ 07, 03 say "Location....... " get yloc pict "!!!!!!!!!!"
@@ -1940,11 +2099,6 @@ select radbr
 ystart = radbr->frptdate - 7
 yend = radbr->frptdate + 7
 use
-
-ydisp = f_confirm ("[D]isplay on Screen  [P]rint [Q]uit", "DPQ")
-if ydisp ="Q"
-   return
-endif
 
 f_popup ("Please Wait...")
 
@@ -2045,14 +2199,9 @@ yc1 = max (20, int (l_formlen/2) - int (len (gtitle) / 2))
 yc2 = max (20, int (l_formlen/2) - int (len (l_ftitle) / 2))
 yc3 = l_formlen - 12
 
-f_popup ("Creating Report ...")
-if ydisp = "D"
-   yfil=gstnpath+"rrout.rpt"
-   set device to print
-   set printer to &yfil
-else
-   set device to print
-endif
+* -- 06.22.11: Create report here
+l_filename = if(empty(l_filename), gstnpath + "rrout.rpt", l_filename)
+mgmt_dest (ydisp, l_filename)     && set print dest
 
 yrow = mgmt_hdr (ydisp, .f.)
 
@@ -2102,6 +2251,25 @@ private yloc, ystart, yend, ycode, ytnm, yfnd, ystatus, yln, ylcnt, ydisp
 
 f_box (02, 05, 04, 78, "You have selected")
 @ 03, 07 say "Location Yield Report"
+
+* --
+l_filename = space(50)
+yemail = space(40)
+yrptname = "Location Yield Report"
+ydisp = mgmt_option()
+if ydisp ="Q"
+   return
+elseif ydisp = "F"
+   if .not. mgmt_getfil (@l_filename)     && pass by reference
+      return
+   endif  
+elseif ydisp = "E"
+   if .not. mgmt_getem (@yemail, @l_filename)     && pass by reference
+      return
+   endif	  
+endif
+* --
+
 yloc = gloc
 ystart = date()
 yend = date()
@@ -2112,11 +2280,6 @@ yend = date()
 
 if f_rd () = 27
   return
-endif
-
-ydisp = f_confirm ("[D]isplay on Screen  [P]rint [Q]uit", "DPQ")
-if ydisp ="Q"
-   return
 endif
 
 f_popup ("Please Wait...")
@@ -2198,14 +2361,9 @@ yc1 = max (20, int (l_formlen/2) - int (len (gtitle) / 2))
 yc2 = max (20, int (l_formlen/2) - int (len (l_ftitle) / 2))
 yc3 = l_formlen - 12
 
-f_popup ("Creating Report ...")
-if ydisp = "D"
-   yfil=gstnpath+"rrout.rpt"
-   set device to print
-   set printer to &yfil
-else
-   set device to print
-endif
+* -- 06.22.11: Create report here
+l_filename = if(empty(l_filename), gstnpath + "rrout.rpt", l_filename)
+mgmt_dest (ydisp, l_filename)     && set print dest
 
 yrow = mgmt_hdr (ydisp, .f.)
 
@@ -2232,8 +2390,3 @@ yrow = yrow + 1
 
 mgmt_end (yrow)
 close all        && leave this in... (edc)
-
-
-
-
-

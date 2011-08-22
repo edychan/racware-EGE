@@ -1015,7 +1015,7 @@ ypaiyn = (l_fpai > 0.00)
 @ 4, 64 get l_fwkdchg picture [9999.99]
 @ 4, 75 get l_fwkdmlg picture replicate ([9], 4)
 @ 5, 64 get l_fwkchg picture [9999.99]
-@ 5, 75 get l_fwkmlg picture replicate ([9], 4) valid rrnoa17 ()
+@ 5, 75 get l_fwkmlg picture replicate ([9], 4)
 @ 6, 64 get l_fmthchg picture [9999.99]
 @ 6, 75 get l_fmthmlg picture replicate ([9], 4)
 
@@ -1075,4 +1075,3 @@ f_restbox (yscn)
 setcolor (ycolor)
 
 return .t.
-

@@ -80,6 +80,10 @@
 * 04.28.11: paperless ra
 *   1. mandatory email field (NA => not applicable)
 *   2. Add email validate (rafunc)               
+* 08.21.11: add extra day (fxdlychg), extended day (fwkdchg) according to dollar convention
+*   1. get fxdlychg from reservation if available
+*   2. get l_fxdlychg if rental days > 7 
+*   3. calculate estimate (e.g. 9 days = 1 wk + 2 extra days; not 2 reg days)
 * ===========================================================================
 f_clrscn ("Open Rental Agreement")
 f_popup ("Please Wait...")
@@ -1178,6 +1182,7 @@ l_fdob = fcexp1
 
 l_femail = femail                && 10.23.01: add email
 
+l_fxdlychg = fxdlychg            && 08.21.11: add extra day rate from dollar reservation system... 
 l_fdlychg = fdlychg
 l_fdlymlg = fdlymlg
 l_fhrchg = fhrchg
@@ -1953,6 +1958,26 @@ endif
 *
 return .t.
 
+* --
+* 08.21.11: get extra day rate if necessary (from dollar reservation system currently... rares->fxdlychg)
+* ie. if rentals days > 7
+function rrnoa17
+private yscn, ycolor, yptr, yitem
+
+if l_fdays <= 7
+   return .t.
+endif
+   
+ycolor = setcolor (gsubcolor)
+yscn = f_box (9, 50, 11, 70)
+@ 10, 52 say "Extra Day: "
+setcolor (gsubget)
+@ 10, 63 say l_fxdlychg pict "9999.99"
+f_getnum (@l_fxdlychg, 10, 63, "", "9999.99", .t.)
+f_restbox (yscn)
+setcolor (ycolor)
+
+return .t.
 
 ******************************
 * check pay code
@@ -2266,7 +2291,7 @@ procedure fgetrrnoa
 @ 4, 64 get l_fwkdchg picture [9999.99]
 @ 4, 75 get l_fwkdmlg picture replicate ([9], 4)
 @ 5, 64 get l_fwkchg picture [9999.99]
-@ 5, 75 get l_fwkmlg picture replicate ([9], 4)
+@ 5, 75 get l_fwkmlg picture replicate ([9], 4) valid rrnoa17()       && 08.21.11: get extra day rate if necessary
 @ 6, 64 get l_fmthchg picture [9999.99]
 @ 6, 75 get l_fmthmlg picture replicate ([9], 4)
 @ 7, 60 get l_fhrchg picture [999.99]             && 12.21.09
@@ -2587,9 +2612,12 @@ setcolor (ycolor)
 release yscn
 
 * ------------------------------------
+* called by rrnoa (open ra), rrnfmu1 (extend ra) and rrnfmu4 (update ra)
 * 02.20.09: Calculate estimate rental charge
 * 05.06.09: Include add'l date rate calculation (in case of extend contract)
 *     note: Important to preserve FDUEIN date for correct calculation
+* --
+* 08.21.11: add extra day (l_fxdlychg), extend day (l_fwkdchg) according to dollar convention
 * ------------------------------------
 function rrnestchg
 
@@ -2602,6 +2630,7 @@ l_fdly = 0
 l_fwkd = 0
 l_fwkdtot = 0
 l_fdlytot = 0
+l_fxdlytot = 0
 l_fwktot = 0
 l_fmthtot = 0
 l_fhrtot = 0
@@ -2670,25 +2699,28 @@ endif
 
 yrdays = l_fdly
 yrhr = l_fhr
+yxdlychg = l_fdlychg         && 08.22.11: reg. daily rate
 * estimate weekly chg
 l_fwk = 0
 if l_fwkchg > 0.00     
-   * --02.20.09     
+   * 08.22.11: extra day rate applies to weekly rate only
+   yxdlychg = if(l_fxdlychg > 0, l_fxdlychg, l_fdlychg)   
+   * --02.20.09
       l_fwk = int (yfdays/7)
       l_fdly = yfdays - l_fwk * 7
       l_fhr = yfhr
-      if l_fdly * l_fdlychg + l_fhr * l_fhrchg > l_fwkchg
+      if l_fdly * yxdlychg + l_fhr * l_fhrchg > l_fwkchg
          l_fwk = l_fwk + 1
          l_fdly = 0
          l_fhr = 0
       endif
-      if l_fdly > 0 .and. l_fdlychg <= 0
+      if l_fdly > 0 .and. yxdlychg <= 0
          l_fwk = l_fwk + 1
          l_fdly = 0
          l_fhr = 0
       endif
       if l_fwk > 0
-         ytotw = l_fwk * l_fwkchg + l_fdly * l_fdlychg +   ;
+         ytotw = l_fwk * l_fwkchg + l_fdly * yxdlychg +   ;         
                  l_fhr * l_fhrchg 
          if ytotw > ytotd
             l_fwk = 0
@@ -2763,8 +2795,10 @@ else
    l_fmthtot = 0.00
 endif
 
-if l_fdlychg > 0.00
-   l_fdlytot = l_fdlychg * l_fdly
+if l_fxdlychg > 0.00
+   l_fxdlytot = l_fxdlychg * l_fdly
+elseif l_fdlychg > 0.00
+   l_fdlytot = l_fdlychg * l_fdly   
 elseif l_fwkchg > 0.00
    if l_fdly > 0      
       l_fwk = l_fwk + 1
@@ -2782,10 +2816,20 @@ elseif l_fmthchg > 0
    endif
 endif
 l_fhrtot = l_fhr * l_fhrchg
-l_ftmetot = l_fdlytot + l_fwkdtot + l_fwktot + l_fmthtot + l_fhrtot
+l_ftmetot = l_fdlytot + l_fwkdtot + l_fwktot + l_fmthtot + l_fhrtot + l_fxdlytot     && 08.22.11
 
 * est time charge saved for ERC check-in calculation (rrnca)
 l_ftmechg = l_ftmetot - l_fhrtot
+
+* --debug 
+*? "Hour: " + str(l_fhrtot,10,2)
+*? "reg day: " + str(l_fdlytot,10,2)
+*? "extend: " + str(l_fwkdtot,10,2)
+*? "week: " + str(l_fwktot,10,2)
+*? "extra: " + str(l_fxdlytot,10,2)
+*? "total: " + str(l_ftmetot,10,2)
+*inkey(0)
+* --
 
 l_fmlgtot = 0
 l_fdisctot = 0
