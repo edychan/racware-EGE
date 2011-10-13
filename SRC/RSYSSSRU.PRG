@@ -9,6 +9,9 @@
 * edc: allow to change the effective to date.
 * 10.21.99
 * set century on
+* --
+* 09.01.11
+* ADD extra day rate - FXDLYCHG 
 * ===========================================================================
 parameters xupd
 private xrow, xcdw
@@ -37,10 +40,14 @@ do while .t.
    setcolor (gbluecolor)
    @ ycnt, 1 say "Rate          LOC               Class    " + ;
       "  Effective             -"
-   @ ycnt + 1, 13 say "Daily    Weekend    Weekly   Monthly  Late Chg" + ;
-      "   Mile Chg  Wknd Day"
-   @ ycnt + 2, 1 say "Charge   " + space(62) + "Min"
-   @ ycnt + 3, 1 say "Free Mile" + space(62) + "Max"
+   * -- 09.01.11: replace weekend with extra day 
+   * @ ycnt + 1, 13 say "Daily   Weekend     Weekly   Monthly  Late Chg" + ;
+   *   "   Mile Chg  Wknd Day"
+   @ ycnt + 1, 13 say "Daily    Extra-Day  Weekly   Monthly  Late Chg" + ;
+      "   Mile Chg"
+   @ ycnt + 2, 1 say "Charge   "         && + space(62) + "Min"
+   @ ycnt + 3, 1 say "Free Mile"         && + space(62) + "Max"
+   * --
    @ ycnt + 4, 1 say "Reg. CDW :          CDW1:       Limit1:       CDW2:        Limit2:"
    @ ycnt + 5, 1 say "Remark:"
    @ ycnt + 6, 1 say "Res Limit:         Oversell:     %  Booked:"
@@ -84,16 +91,17 @@ do while .t.
                        (l_fdateto >= l_fdatefrom .or. empty (l_fdateto)))
       @ ycnt + 2, 13 get l_fdlychg picture "9999.99"
       @ ycnt + 3, 15 get l_fdlymlg picture "9999"
-      @ ycnt + 2, 22 get l_fwkdchg picture "9999.99"
-      @ ycnt + 3, 24 get l_fwkdmlg picture "9999"
+      @ ycnt + 2, 22 get l_fxdlychg picture "9999.99"   && 09.01.11
+      * @ ycnt + 2, 22 get l_fwkdchg picture "9999.99"  && 09.01.11
+      * @ ycnt + 3, 24 get l_fwkdmlg picture "9999"     && 09.01.11
       @ ycnt + 2, 32 get l_fwkchg picture "9999.99"
       @ ycnt + 3, 34 get l_fwkmlg picture "9999"
       @ ycnt + 2, 42 get l_fmthchg picture "9999.99"
       @ ycnt + 3, 44 get l_fmthmlg picture "9999"
       @ ycnt + 2, 52 get l_fhrchg picture "9999.99"
       @ ycnt + 2, 63 get l_fmlgchg picture "99.99"
-      @ ycnt + 2, 76 get l_fwkdmin pict "99"
-      @ ycnt + 3, 76 get l_fwkdmax pict "99"
+      * @ ycnt + 2, 76 get l_fwkdmin pict "99"          && 09.01.11
+      * @ ycnt + 3, 76 get l_fwkdmax pict "99"          && 09.01.11
       @ ycnt + 4, 13 get l_fcdwchg picture "99.99"
       @ ycnt + 4, 26 get l_fcdwded picture "99.99"
       @ ycnt + 4, 40 get l_fdedamt picture "9999"

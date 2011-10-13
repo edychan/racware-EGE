@@ -33,6 +33,8 @@
 * 11.15.08: update est rental charge when extend ra
 * ------------
 * 10.18.10: get user if
+* --
+* 09.14.11: elimate monthly rate
 * ===========================================================================
 parameters xtyp
 private yadriver, yothchg, yestamt, ycdwyn, ypaiyn
@@ -1012,12 +1014,14 @@ ypaiyn = (l_fpai > 0.00)
 @ 2, 57 get l_ftmtyp picture [9] valid rrnoa15 ()
 @ 3, 64 get l_fdlychg picture [9999.99]
 @ 3, 75 get l_fdlymlg picture replicate ([9], 4)
-@ 4, 64 get l_fwkdchg picture [9999.99]
-@ 4, 75 get l_fwkdmlg picture replicate ([9], 4)
+@ 4, 64 get l_fxdlychg picture [9999.99]
+* @ 4, 75 get l_fwkdmlg picture replicate ([9], 4)
 @ 5, 64 get l_fwkchg picture [9999.99]
-@ 5, 75 get l_fwkmlg picture replicate ([9], 4) valid rrnoa17 ()
-@ 6, 64 get l_fmthchg picture [9999.99]
-@ 6, 75 get l_fmthmlg picture replicate ([9], 4)
+@ 5, 75 get l_fwkmlg picture replicate ([9], 4)   && 09.14.11: valid rrnoa17 ()
+@ 6, 64 get l_fwkdchg picture [9999.99]
+@ 6, 75 get l_fwkdmlg picture replicate ([9], 4)
+* @ 6, 64 get l_fmthchg picture [9999.99]
+* @ 6, 75 get l_fmthmlg picture replicate ([9], 4)
 
 @ 7, 60 get l_fhrchg picture [999.99]             && 12.21.09
 @ 8, 61 get l_fmlgchg picture [99.99]

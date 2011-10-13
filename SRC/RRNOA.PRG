@@ -84,6 +84,8 @@
 *   1. get fxdlychg from reservation if available
 *   2. get l_fxdlychg if rental days > 7 
 *   3. calculate estimate (e.g. 9 days = 1 wk + 2 extra days; not 2 reg days)
+* 09.14.11: elimate monthly rate and change the rate display order
+*  (i.e. daily, extra day, weekly, extended)
 * ===========================================================================
 f_clrscn ("Open Rental Agreement")
 f_popup ("Please Wait...")
@@ -1565,6 +1567,9 @@ if f_valid (f_getrate (l_frate, l_floc, l_fclass, l_fdateout), ;
    * 06.01.2011: set add'l day mileage = daily allow mileage
    l_fwkdmlg = l_fdlymlg
    * --
+   if l_fdays > 7
+      l_fxdlychg = rartm->fxdlychg   && 09.01.11: add extra day rate
+   endif
    l_fwkchg = rartm->fwkchg
    l_fwkmlg = rartm->fwkmlg
    l_fmthchg = rartm->fmthchg
@@ -1578,13 +1583,15 @@ if f_valid (f_getrate (l_frate, l_floc, l_fclass, l_fdateout), ;
    setcolor (gblueget)
    @  3, 64 say l_fdlychg picture [9999.99]
    @  3, 75 say l_fdlymlg picture replicate ([9],  4)
-   @  4, 64 say l_fwkdchg picture [9999.99]
-   @  4, 75 say l_fwkdmlg picture replicate ([9],  4)
+   @  4, 64 say l_fxdlychg picture [9999.99]
+   * @  4, 75 say l_fwkdmlg picture replicate ([9],  4)
    @  5, 64 say l_fwkchg picture [9999.99]
    @  5, 75 say l_fwkmlg picture replicate ([9],  4)
-   @  6, 64 say l_fmthchg picture [9999.99]
-   @  6, 75 say l_fmthmlg picture replicate ([9],  4)
-   @  7, 60 say l_fhrchg picture [999.99]                 &&12.21.09
+   @  6, 64 say l_fwkdchg picture [9999.99]               && 09.14.11 
+   @  6, 75 say l_fwkdmlg picture replicate ([9],  4)
+   * @  6, 64 say l_fmthchg picture [9999.99]
+   * @  6, 75 say l_fmthmlg picture replicate ([9],  4)
+   @  7, 60 say l_fhrchg picture [999.99]                 && 12.21.09
    @  8, 61 say l_fmlgchg picture [99.99]
    * -- 11.15.08
    * @ 22, 29 say l_fwkdmin picture [99]
@@ -2077,10 +2084,10 @@ next
 
 if f_valid (yfnd .and. rrnoa20 (), "Invalid Deposit Type!")
    if l_fpaycod1 = 1
-      if l_fdepamt = 0.00
+      * if l_fdepamt = 0.00      && 09.29.11
          l_fdepamt = max (yrntmin, max (l_fdepamt, ;
             round (yrntmult * l_festchg / 100, 2)))
-      endif
+      * endif
    else
       l_fdepamt = l_festchg
    endif
@@ -2288,13 +2295,15 @@ procedure fgetrrnoa
 
 @ 3, 64 get l_fdlychg picture [9999.99]
 @ 3, 75 get l_fdlymlg picture replicate ([9], 4)
-@ 4, 64 get l_fwkdchg picture [9999.99]
-@ 4, 75 get l_fwkdmlg picture replicate ([9], 4)
+@ 4, 64 get l_fxdlychg picture [9999.99]
+* @ 4, 75 get l_fwkdmlg picture replicate ([9], 4)
 @ 5, 64 get l_fwkchg picture [9999.99]
-@ 5, 75 get l_fwkmlg picture replicate ([9], 4) valid rrnoa17()       && 08.21.11: get extra day rate if necessary
-@ 6, 64 get l_fmthchg picture [9999.99]
-@ 6, 75 get l_fmthmlg picture replicate ([9], 4)
-@ 7, 60 get l_fhrchg picture [999.99]             && 12.21.09
+@ 5, 75 get l_fwkmlg picture replicate ([9], 4)                       && valid rrnoa17()       && 08.21.11: get extra day rate if necessary
+@ 6, 64 get l_fwkdchg picture [9999.99]                               && 09.14.11
+@ 6, 75 get l_fwkdmlg picture replicate ([9], 4)
+* @ 6, 64 get l_fmthchg picture [9999.99]
+* @ 6, 75 get l_fmthmlg picture replicate ([9], 4)
+@ 7, 60 get l_fhrchg picture [999.99]                                 && 12.21.09
 @ 8, 61 get l_fmlgchg picture [99.99]
 
 @ 7, 72 get ycdwyn pict "Y" valid rrnoa16 ()
@@ -2374,13 +2383,15 @@ setcolor (gblueget)
 @ 1, 71 say l_fclass
 @ 3, 64 say l_fdlychg picture [9999.99]
 @ 3, 75 say l_fdlymlg picture replicate ([9], 4)
-@ 4, 64 say l_fwkdchg picture [9999.99]
-@ 4, 75 say l_fwkdmlg picture replicate ([9],  4)
+@ 4, 64 say l_fxdlychg picture [9999.99]
+* @ 4, 75 say l_fwkdmlg picture replicate ([9],  4)
 @ 5, 64 say l_fwkchg picture [9999.99]
 @ 5, 75 say l_fwkmlg picture replicate ([9],  4)
-@ 6, 64 say l_fmthchg picture [9999.99]
-@ 6, 75 say l_fmthmlg picture replicate ([9],  4)
-@ 7, 60 say l_fhrchg picture [999.99]              && 12.21.099
+@ 6, 64 say l_fwkdchg picture [9999.99]            && 09.14.11
+@ 6, 75 say l_fwkdmlg picture replicate ([9],  4)
+* @ 6, 64 say l_fmthchg picture [9999.99]
+* @ 6, 75 say l_fmthmlg picture replicate ([9],  4)
+@ 7, 60 say l_fhrchg picture [999.99]              
 @ 8, 61 say l_fmlgchg picture [99.99]
 @ 7, 72 say ycdwyn pict "Y"
 @ 7, 74 say l_fcdw picture [99.99]
@@ -2795,7 +2806,7 @@ else
    l_fmthtot = 0.00
 endif
 
-if l_fxdlychg > 0.00
+if l_fxdlychg > 0.00 .and. yrdays > 7    && 09.29.11: extra day rate only apply to rental > 7days
    l_fxdlytot = l_fxdlychg * l_fdly
 elseif l_fdlychg > 0.00
    l_fdlytot = l_fdlychg * l_fdly   
@@ -2922,5 +2933,16 @@ ytot2 = if (l_fcdwtax, 0.00, l_fcdwtot) + if (l_fpaitax, 0.00, l_fpaitot) ;
    + if (gfueltax, 0.00, l_ffueltot) + l_fdmgtot
 
 ytotal = round (ytot1 + ytot2 + l_ftaxtot, 2)
+
+* --debug
+*? "T&M : " + str(l_ftmetot,10,2)
+*? "tot1: " + str(ytot1,10,2)
+*? "tot2: " + str(ytot2,10,2)
+*? "Tax : " + str(l_ftaxtot,10,2)
+*? "Total:" + str(ytotal,10,2)
+*inkey(0)
+* --
+
+
 
 return ytotal

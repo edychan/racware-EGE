@@ -52,6 +52,7 @@
 *   i.e. 9 days = 1 week + 2 extra day (not daily rate which is usually weekly/4 )
 *        note: extra day is stored as fxdlychg (*new field) 
 *        see function rrvestchg
+* 09.14.11: take out monthly rate
 * ===========================================================================
 
 parameters xtyp
@@ -909,11 +910,11 @@ case yvar $ "L_FCLASS;L_FCODE"
       else
          set century off
          f_pick_f (02, 01, "", "ÄRateÄÄÄLocationÄÄÄClassÄÄFromÄÄÄ" + ;
-                  "ÄÄÄToÄÄÄÄÄÄÄDlyÄÄÄÄÄWkdÄÄÄÄÄÄWkÄÄÄÄÄMth", ;
-                  "fcode+[ ]+if(empty(floc),[ALL       ],floc)+[ ]+" + ;
+                  "ÄÄÄToÄÄÄÄÄÄÄDlyÄÄÄÄÄWeeklyÄÄÄÄX'day", ;
+                  "fcode+[  ]+if(empty(floc),[ALL       ],floc)+[ ]+" + ;
                   "fclass+[ ]+dtoc(fdatefrom)+[ ]+dtoc(fdateto)+[ ]+" + ;
-                  "str(fdlychg,8,2)+str(fwkdchg,8,2)+str(fwkchg,8,2)+" + ;
-                  "str(fmthchg,8,2)", "rrndrd","fcode+floc","l_fcode+l_floc")
+                  "str(fdlychg,8,2)+[  ]+str(fwkchg,8,2)+[ ]+" + ;
+                  "str(fxdlychg,8,2)", "rrndrd","fcode+floc","l_fcode+l_floc")
          set century on
       endif
       select rartm
@@ -1567,25 +1568,31 @@ if f_valid (f_getrate (l_fcode, l_floc, l_fclass, l_fdateout), ;
       l_fdlychg = rartm->fdlychg
       l_fdlymlg = rartm->fdlymlg
       l_fwkdchg = rartm->fwkdchg
-      l_fwkdmlg = rartm->fwkdmlg
-      l_fwkdmin = rartm->fwkdmin
-      l_fwkdmax = rartm->fwkdmax
+	  * -- 09.01.11: add extra day rate in rate table
+      * l_fwkdmlg = rartm->fwkdmlg
+      * l_fwkdmin = rartm->fwkdmin
+      * l_fwkdmax = rartm->fwkdmax
+	  l_fxdlychg = rartm->fxdlychg
+	  * --
       l_fwkchg = rartm->fwkchg
       l_fwkmlg = rartm->fwkmlg
-      l_fmthchg = rartm->fmthchg
-      l_fmthmlg = rartm->fmthmlg
+      * l_fmthchg = rartm->fmthchg    && 09.14.11
+      * l_fmthmlg = rartm->fmthmlg
       l_fhrchg = rartm->fhrchg
       l_fmlgchg = rartm->fmlgchg
       l_fcdw = rartm->fcdwchg
       setcolor (gblueget)
       @ 4, 56 say l_fdlychg picture [9999.99]
       @ 4, 64 say l_fdlymlg picture [9999]
-      @ 5, 56 say l_fwkdchg picture [9999.99]
-      @ 5, 64 say l_fwkdmlg picture [9999]
+	  * -- 09.01.11
+      * @ 5, 56 say l_fwkdchg picture [9999.99]
+      * @ 5, 64 say l_fwkdmlg picture [9999]
+      @ 5, 56 say l_fxdlychg picture [9999.99]
+      * --
       @ 6, 56 say l_fwkchg  picture [9999.99]
       @ 6, 64 say l_fwkmlg  picture [9999]
-      @ 7, 56 say l_fmthchg picture [9999.99]
-      @ 7, 64 say l_fmthmlg picture [9999]
+      * @ 7, 56 say l_fmthchg picture [9999.99]     && 09.14.11
+      * @ 7, 64 say l_fmthmlg picture [9999]
       @ 8, 56 say l_fhrchg  picture [9999.99]
       @ 9, 56 say l_fmlgchg picture [9999.99]
       * @ 10, 60 say l_fwkdmin picture [99]          && 08.21.11: min/max not applicable anymore....
@@ -1927,7 +1934,7 @@ ydaychg = if(ymins<=0,yydays,yydays + 1)
 
 l_fhr = int (ymins / 60)
 ymins = ymins - l_fhr * 60
-l_fhr = if(ymins>0, l_fhr+1, l_fhr)
+l_fhr = if(ymins>ggracehr, l_fhr+1, l_fhr)
 
 l_frhr = l_fhr
 l_fdly = yydays
@@ -1940,12 +1947,29 @@ l_fdlytot = 0
 l_fhrtot = 0
 if l_fdly > 4 .and. l_fwkchg > 0                           && monthly rate not include in the estimate ...
    ydlychg = if(l_fxdlychg > 0, l_fxdlychg, l_fdlychg)     && use extra daily rate if available
-   l_fwk = int (l_fdly/7)
+   l_fwk = if(l_fdly>7,int (l_fdly/7),1)
    l_fwktot = l_fwk * l_fwkchg
    l_fdly = l_fdly - l_fwk * 7
+   l_fdly = if(l_fdly>0,l_fdly,0)
    l_fdlytot = l_fdly * ydlychg
-   l_fhrtot = l_fhr * l_fhrchg   
-   l_fhrtot = if(l_fhrtot > ydlychg, ydlychg, l_fhrtot)
+   l_fhr = if(yydays>6,l_fhr,0)
+   l_fhrtot = l_fhr * l_fhrchg
+   * -- pump up to full day
+   if l_fhrtot > ydlychg
+      l_fdly = l_fdly + 1
+      l_fdlytot = l_fdlytot + ydlychg
+      l_fhr = 0
+      l_fhrtot = 0
+   endif
+   * -- pump up to full week
+   if l_fdlytot + l_fhrtot > l_fwkchg
+      l_fwk = l_fwk+ 1
+      l_fwktot = l_fwktot + l_fwkchg
+      l_fdly = 0
+      l_fdlytot = 0
+      l_fhr = 0
+      l_fhrtot = 0
+   endif
 else
    ydlychg = l_fdlychg                                     && use regular daily rate
    l_fdlytot = l_fdly * ydlychg
@@ -1957,11 +1981,16 @@ endif
 l_ftmetot = l_fwktot + l_fdlytot + l_fhrtot
 l_fmlgtot = 0
 
-*? l_fwktot
-*? l_fdlytot
-*? l_fhrtot
-*? l_ftmetot
+* --debug
+*? "# days: "+str(yydays,5)
+*? "# week: "+str(l_fwk,5)
+*? "# day : "+str(l_fdly,5)
+*? "WkTot : "+str(l_fwktot,10,2)
+*? "DlyTot: "+str(l_fdlytot,10,2)
+*? "HrTot : "+str(l_fhrtot,10,2)
+*? "T&M   : "+str(l_ftmetot,10,2)
 *inkey(0)
+* --
 
 * -- variables used by surcharge formula
 l_fmlgtot = 0

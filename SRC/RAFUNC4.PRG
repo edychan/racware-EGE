@@ -1,10 +1,14 @@
-******************************
+*===============================================
+* version control number
+* 09.01.11:
+* g_version = 5.21e
+*================================================
 function usrlgin
 
 public gusrline, gfreesell, gexdos, gusrloc, gusrlocgp
 public g_version
 private yusr, ypass, ycnt, ysp, yok, yfil, ydrv
-g_version = "4.0c"
+g_version = "5.21e"
 
 f_use ("rasys")
 go top

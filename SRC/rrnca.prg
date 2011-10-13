@@ -57,6 +57,8 @@
 * use extended rate (usally daily rate * 15% for example) for extended rental
 * i.e. 5days + 2 extended days = 1 week + 2 extended days
 * Block out Deposit field if freesell is false
+* --
+* 09.14.11: elimate monthly rate
 * ===========================================================================
 store space (15) to yitem1, yitem2, yitem3, yitem4, yitem5, yitem6   && 10.15.08
 set century on     && 07.09.99
@@ -441,7 +443,7 @@ endif
 ******************************
 procedure fgetrrnca
 parameters xnew
-private yedit, yscn, ycolor
+private yscn, ycolor
 
 if xnew
    if .not. empty (l_fremark)
@@ -510,47 +512,47 @@ yedit = yfreesell
 *
 IF yedit
 
-* -- 08.22.11: extra days rate
-@ 12, 16 get l_fxdly picture [999] valid rrncaret (1)
-@ 12, 24 get l_fxdlychg picture [9999.99] valid rrnca5a ()
-@ 12, 37 say l_fxdlytot picture [99999.99]
-@ 13, 16 get l_fdly picture [999] valid rrncaret (1)
-@ 13, 24 get l_fdlychg picture [9999.99] valid rrnca5 ()
-@ 13, 37 say l_fdlytot picture [99999.99]
-@ 14, 16 get l_fwkd picture [999] valid rrncaret (1)
-@ 14, 24 get l_fwkdchg picture [9999.99] valid rrnca9 ()
-@ 14, 37 say l_fwkdtot picture [99999.99]
-@ 15, 16 get l_fwk picture [999] valid rrncaret (1)
-@ 15, 24 get l_fwkchg picture [9999.99] valid rrnca11 ()
-@ 15, 37 say l_fwktot picture [99999.99]
-@ 16, 16 get l_fmth picture [999] valid rrncaret (1)
-@ 16, 24 get l_fmthchg picture [9999.99] valid rrnca14 ()
-@ 16, 37 say l_fmthtot picture [99999.99]
-* --
-@ 17, 16 get l_fhr picture [999] valid rrncaret (1)
-@ 17, 24 get l_fhrchg picture [9999.99] valid rrnca17 ()
-@ 17, 37 say l_fhrtot picture [99999.99]
-@ 18, 16 get l_fmlgs picture [9999] valid rrncaret (1)
-@ 18, 24 get l_fmlgchg picture [9999.99] valid rrnca20 ()
-@ 18, 37 say l_fmlgtot picture [99999.99]
-@ 19, 37 say l_ftmetot + l_fmlgtot picture [99999.99]
-@ 20, 16 get l_fdisc picture [99] valid rrnca22 ()
-@ 20, 37 say l_fdisctot picture [99999.99]
-@ 21, 16 get l_fcdwdays picture [999]
-@ 21, 24 get l_fcdw picture [9999.99] valid rrnca25 ()
-@ 21, 37 say l_fcdwtot picture [99999.99]
-@ 22, 16 get l_fpaidays picture [999]
-@ 22, 24 get l_fpai picture [9999.99] valid rrnca28 ()
-@ 22, 37 say l_fpaitot picture [99999.99]
-*
-if empty(ygsurchg)
-   @ 23, 37 say l_fothtot1 + l_fothtot2 picture [99999.99]
-else
-   @ 23, 15 say l_fothtot1 + l_fothtot2 picture [99999.99]
-   @ 23, 24 say [Surcharge...]
-   @ 23, 37 get l_fsurchg picture [99999.99] 
-endif
-*
+   * -- 08.22.11: extra days rate
+   @ 12, 16 get l_fdly picture [999] valid rrncaret (1)
+   @ 12, 24 get l_fdlychg picture [9999.99] valid rrnca5 ()
+   @ 12, 37 say l_fdlytot picture [99999.99]
+   @ 13, 16 get l_fxdly picture [999] valid rrncaret (1)
+   @ 13, 24 get l_fxdlychg picture [9999.99] valid rrnca5a ()
+   @ 13, 37 say l_fxdlytot picture [99999.99]
+   @ 14, 16 get l_fwkd picture [999] valid rrncaret (1)
+   @ 14, 24 get l_fwkdchg picture [9999.99] valid rrnca9 ()
+   @ 14, 37 say l_fwkdtot picture [99999.99]
+   @ 15, 16 get l_fwk picture [999] valid rrncaret (1)
+   @ 15, 24 get l_fwkchg picture [9999.99] valid rrnca11 ()
+   @ 15, 37 say l_fwktot picture [99999.99]
+   * @ 16, 16 get l_fmth picture [999] valid rrncaret (1)       && 09.14.11
+   * @ 16, 24 get l_fmthchg picture [9999.99] valid rrnca14 ()
+   * @ 16, 37 say l_fmthtot picture [99999.99]
+   * --
+   @ 17, 16 get l_fhr picture [999] valid rrncaret (1)
+   @ 17, 24 get l_fhrchg picture [9999.99] valid rrnca17 ()
+   @ 17, 37 say l_fhrtot picture [99999.99]
+   @ 18, 16 get l_fmlgs picture [9999] valid rrncaret (1)
+   @ 18, 24 get l_fmlgchg picture [9999.99] valid rrnca20 ()
+   @ 18, 37 say l_fmlgtot picture [99999.99]
+   @ 19, 37 say l_ftmetot + l_fmlgtot picture [99999.99]
+   @ 20, 16 get l_fdisc picture [99] valid rrnca22 ()
+   @ 20, 37 say l_fdisctot picture [99999.99]
+   @ 21, 16 get l_fcdwdays picture [999]
+   @ 21, 24 get l_fcdw picture [9999.99] valid rrnca25 ()
+   @ 21, 37 say l_fcdwtot picture [99999.99]
+   @ 22, 16 get l_fpaidays picture [999]
+   @ 22, 24 get l_fpai picture [9999.99] valid rrnca28 ()
+   @ 22, 37 say l_fpaitot picture [99999.99]
+   *
+   if empty(ygsurchg)
+      @ 23, 37 say l_fothtot1 + l_fothtot2 picture [99999.99]
+   else
+      @ 23, 15 say l_fothtot1 + l_fothtot2 picture [99999.99]
+      @ 23, 24 say [Surcharge...]
+      @ 23, 37 get l_fsurchg picture [99999.99] 
+   endif
+   *
 ENDIF
 * @ 1, 71 get l_fcredtot picture [99999.99]         && 05.16.01
 @ 2, 58 get l_ftax picture [99.99] valid rrnca34 ()
@@ -562,6 +564,8 @@ ENDIF
 * --08.18.11: only for supervisor
 if yedit 
    @ 6, 71 get l_fdepamt picture [99999.99] valid rrnca36 ()
+else
+   @ 6, 71 say l_fdepamt picture [99999.99] 
 endif
 * --
 @ 7, 71 say l_famtdue picture [99999.99]
@@ -630,7 +634,7 @@ if f_valid (l_fmlgin >= l_fmlgout)
          return .f.
       endif
    endif
-   @ 10, 16 say l_fmlg picture "999999"
+   @ 09, 16 say l_fmlg picture "999999"       && 09.14.11: add extra day rate
    return .t.
 else
    return .f.
@@ -1018,11 +1022,20 @@ endif
 
 * calculate mileage charge 
 l_fmlgfree = 0
+* --09.02.11: free miles for extra day (use l_fdlymlg)
+if l_fxdly > 0
+   if l_fdlymlg = 0
+      l_fmlgfree = l_fmlgs
+   elseif l_fdlymlg > 1
+      l_fmlgfree = l_fmlgfree + l_fxdly * l_fdlymlg
+   endif
+endif
+* --
 if l_fwkd > 0
    if l_fwkdmlg = 0
       l_fmlgfree = l_fmlgs
    elseif l_fwkdmlg > 1
-      l_fmlgfree = l_fmlgfree + l_fwkd * l_fwkdmlg
+      l_fmlgfree = l_fmlgfree + l_fwkd * l_fdlymlg       && 09.02.11: instead of l_fwkdmlg
    endif
 endif
 if l_fdly > 0
@@ -1137,11 +1150,11 @@ if l_fdmgtot = 0.00
 endif
 
 setcolor (gblueget)
-@ 12, 24 say l_fxdlychg picture [9999.99]          && 08.22.11
-@ 13, 16 say l_fdly picture [999]
+@ 12, 16 say l_fdly picture [999]             && 09.14.11
+@ 13, 16 say l_fxdly picture [999]
 @ 14, 16 say l_fwkd picture [999]
 @ 15, 16 say l_fwk picture [999]
-@ 16, 16 say l_fmth picture [999]
+* @ 16, 16 say l_fmth picture [999]            && 09.14.11
 @ 17, 16 say l_fhr picture [999]
 @ 18, 16 say l_fmlgs picture [9999]
 @ 20, 16 say l_fdisc picture [99]
@@ -1152,19 +1165,20 @@ setcolor (gblueget)
 @ 1, 71 say l_fcredtot picture [99999.99]
 @ 2, 58 say l_ftax picture [99.99]
 @ 4, 71 say l_fdmgtot picture [99999.99]
-@ 13, 24 say l_fdlychg picture [9999.99]
+@ 12, 24 say l_fdlychg picture [9999.99]          && 09.14.11
+@ 13, 24 say l_fxdlychg picture [9999.99]         && 09.14.11
 @ 14, 24 say l_fwkdchg picture [9999.99]
 @ 15, 24 say l_fwkchg picture [9999.99]
-@ 16, 24 say l_fmthchg picture [9999.99]
+* @ 16, 24 say l_fmthchg picture [9999.99]        && 09.14.11
 @ 17, 24 say l_fhrchg picture [9999.99]
 @ 18, 24 say l_fmlgchg picture [9999.99]
 
 setcolor (gbluecolor)
-@ 12, 37 say l_fxdlytot picture [99999.99]         && 08.22.11
-@ 13, 37 say l_fdlytot picture [99999.99]
+@ 12, 37 say l_fdlytot picture [99999.99]
+@ 13, 37 say l_fxdlytot picture [99999.99]         && 08.22.11
 @ 14, 37 say l_fwkdtot picture [99999.99]
 @ 15, 37 say l_fwktot picture [99999.99]
-@ 16, 37 say l_fmthtot picture [99999.99]
+* @ 16, 37 say l_fmthtot picture [99999.99]        && 09.14.11
 @ 17, 37 say l_fhrtot picture [99999.99]
 @ 18, 37 say l_fmlgtot picture [99999.99]
 @ 20, 37 say l_fdisctot picture [99999.99]
@@ -1201,7 +1215,7 @@ f_popback ()
 function rrnca5
 
 l_fdlytot = l_fdlychg * l_fdly
-@ 13, 37 say l_fdlytot picture [99999.99]
+@ 12, 37 say l_fdlytot picture [99999.99]
 return .t.
 
 ******************************
@@ -1210,7 +1224,7 @@ return .t.
 function rrnca5a
 
 l_fxdlytot = l_fxdlychg * l_fxdly
-@ 12, 37 say l_fxdlytot picture [99999.99]
+@ 13, 37 say l_fxdlytot picture [99999.99]
 return .t.
 
 ******************************
@@ -1365,6 +1379,14 @@ l_ftotal = round (ytot1 + ytot2 + l_ftaxtot, 2)
 
 @ 2, 71 say l_ftaxtot picture "99999.99"
 @ 5, 71 say l_ftotal picture [99999.99]
+
+* --09.28.11: if freesell is not on ...
+if .not. yfreesell
+   l_famtdue = round (l_ftotal - l_fdepamt, 2)
+   l_famt1 = l_famtdue - l_famt2 - l_famt3
+   @ 7, 71 say l_famtdue picture [99999.99]
+endif
+* --
 return .t.
 
 
