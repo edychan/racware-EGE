@@ -1,0 +1,49 @@
+
+RING
+
+CONNECT 1200
+
+MCII 04/12/99 21:18
+
+2975
+2118 04/12 01092258 ALLD1157
+
+00:     EGE R 10775      04121999 184029
+00:DOLLAR TO EGE 04/12/99 18:40:23 - BATCH NO:  10775
+01:R D8385609 EGE               12/27/99 1050 01/04/00 1110
+02:BALONICK/MARCIA
+03:
+04:                               UA/5683
+05:
+06:
+07:                               CO ZR2849
+08:                                       ZR2849      USD
+09:ICAR  WKL31   1 Q                  1
+10:                              299.00             70.00
+11:
+12:  1  1  1    23.33             70.00             70.00
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:TRAVEL PROFESSIONALS INC       14621504
+21:SUITE 103                      UAZ06MIBP
+22:420 LAKE COOK ROAD
+23:DEERFIELD            IL 60015      UNITED STATES
+24:
+25:    IL  04/12/99 11:47 COVIA_LOG     10775  D8385609
+26:
+27:
+28:
+29:
+30:
+99:BATCH NO:  10775 TO EGE COMPLETE AT 18:40:23 041299   1
+
+
+NNNN
+
+
++++

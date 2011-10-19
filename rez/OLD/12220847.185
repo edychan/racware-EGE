@@ -1,0 +1,49 @@
+
+RING
+
+CONNECT 1200
+
+MCII 12/22/99 15:35
+
+9867
+1535 12/22 04591224 PENT9926
+00:     EGE R 11852      12221999 120249
+00:DOLLAR TO EGE 12/22/99 12:02:48 - BATCH NO:  11852
+01:A Z2884204 EGE               12/28/99 2003 01/03/00 0945
+02:DELEEUW/DAVID
+03:
+04:                               AA/2349
+05:
+06:
+07:                               DC 38156620470027       09/01
+08:                                       PR2228      USD
+09:SFAR  WKL31   1 G                  1
+10:                              995.00            199.00
+11:
+12:        1    66.33            199.00            199.00
+13:
+14:
+15:
+16:
+17:   QAR.
+18:
+19:
+20:PROTRAVEL INTERNATIONAL INC    33692551
+21:10TH FLOOR                     AG-CG
+22:515 MADISON AVE
+23:NEW YORK             NY 10022      UNITED STATES
+24:
+25:    PH  12/22/99 11:27 TKSC          11852  Z2884204
+26:
+27:
+28:
+29:
+30:
+99:BATCH NO:  11852 TO EGE COMPLETE AT 12:02:48 122299   1
+
+
+NNNN
+
+
++++
+NO CARRIER

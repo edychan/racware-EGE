@@ -1,0 +1,54 @@
+
+RING
+
+NO CARRIER
+
+RING
+
+CONNECT 1200
+
+MCII 04/06/99 16:44
+
+7475
+1644 04/06 01121871 ALLD5659
+
+00:     EGE R 10769      04061999 140930
+00:DOLLAR TO EGE 04/06/99 14:09:27 - BATCH NO:  10769
+01:R D8280865 EGE               04/10/99 1200 04/17/99 1200
+02:THEISEN/GREG
+03:                               (602) 998-7150
+04:                                 /UNKWN
+05:
+06:
+07:                               MC 5415680516890578     06/00
+08:                                       DA2111      USD
+09:FCAR  SPW31   1 G                  1
+10:                              159.00             38.00
+11:
+12:        1    12.67             38.00             38.00
+13:
+14:
+15:
+16:
+17:ADV POL RESTRIC SURCHRG TAX CC REQ DODGE INTREPID ADV N/G
+18:
+19:
+20:
+21:                               CLIENT
+22:
+23:
+24:
+25:    PH  04/06/99 13:52 DYMM          10769  D8280865
+26:
+27:
+28:
+29:
+30:
+99:BATCH NO:  10769 TO EGE COMPLETE AT 14:09:28 040699   1
+
+
+NNNN
+
+
++++
+NO

@@ -1,0 +1,204 @@
+
+00:DOLLAR TO    EGE 12/16/10 15:40:50 - BATCH NO:  78362
+SSSSSSSSSS
+01:C R3193771 EGE      EGE      09/04/11 1200 09/09/11 1200  ZR
+02:HOOS/ROBERT
+03:                               6042773424
+04:                                                     N
+05:
+06:                                                   15567117INTERNET
+07:                               VI 4500030102208018     05/14
+08:                                                     USD
+09:EDAR  WK056   1 G                  1
+10:                              134.00
+11:
+12:              8.93             26.80
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:
+21:
+22:
+23:
+24:    LHOOS@SHAW.CA
+25:    ZR  12/16/10 14:51 INET_LOGN     78362  R3193771
+26:0100327078 M 3728636                        BC 12/10 101951
+27:          5179 TURQUOISE DRIVE
+28:                                           RICHMOND BC    V7C 4Z6  CA
+29:          5179 TURQUOISE DRIVE
+30:                                           RICHMOND BC    V7C 4Z6  CA
+31:
+32:RR 0100327078
+SSSSSSSSSS
+01:R R3247902 EGE      EGE      09/23/11 1300 09/28/11 1200  ZR
+02:HOOS/ROBERT
+03:                               6042773424
+04:                                                     N
+05:
+06:                                                   16029685INTERNET
+07:                               VI 4500030102208018     05/14
+08:                                                     USD
+09:EDAR  WK056   1 G                  1
+10:                              125.00
+11:
+12:              8.33             25.00
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:
+21:
+22:
+23:
+24:    LHOOS@SHAW.CA
+25:    ZR  12/16/10 14:47 INET_LOGN     78362  R3247902
+26:0100327078 M 3728636                        BC 12/10 101951
+27:          5179 TURQUOISE DRIVE
+28:                                           RICHMOND BC    V7C 4Z6  CA
+29:          5179 TURQUOISE DRIVE
+30:                                           RICHMOND BC    V7C 4Z6  CA
+31:
+32:RR 0100327078
+SSSSSSSSSS
+01:R R3248210 EGE               02/20/11 1920 02/28/11 0700  ZR
+02:MINTZ/LINDAILENE
+03:
+04:                               AA/2397
+05:
+06:                                                   3BZYU3
+07:                               AX 372843224576002      05 13
+08:                                                     USD
+09:SFAR  WKL31   1 G                  1
+10:                              499.00             83.17    27.72
+11:
+12:     1       27.72             83.17
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:TRAVEL ONE INC                 24890434
+21:8009 34TH AVE SOUTH            PARS_LOGN
+22:RIVERVIEW OFFICE TOWER
+23:MINNEAPOLIS          MN 55425      UNITED STATES
+24:
+25:    DP  12/16/10 15:04 PARS_LOGN     78362  R3248210
+26:
+27:
+28:
+29:
+30:
+31:
+32:
+SSSSSSSSSS
+01:R R3248633 EGE      EGE      01/03/11 1330 01/12/11 1330  ZR
+02:BEAN/GRADY
+03:                               (501) 617-8030
+04:                                                     N
+05:
+06:                                                   R3248633
+07:                               AX 371553593741001      10/13
+08:                                                     USD
+09:LFAR  WK916   1 G                  1
+10:                              831.25
+11:
+12:     2       46.19            138.55
+13:
+14:
+15:
+16:
+17:
+18:ADV POL/RES
+19:ADV CANCELLATION POL/FEE
+20:
+21:                               CLIENT, GUI
+22:
+23:
+24:
+25:    PH  12/16/10 15:28 JDCARPI       78362  R3248633
+26:
+27:
+28:
+29:
+30:
+31:
+32:
+SSSSSSSSSS
+01:A R3248633 EGE      EGE      01/03/11 1330 01/12/11 1330  ZR
+02:BEAN/GRADY
+03:                               (501) 617-8030
+04:                                                     N
+05:
+06:                                                   R3248633
+07:                               AX 371553593741001      10/13
+08:                                                     USD
+09:LFAR  WK916   1 G                  1
+10:                              831.25
+11:
+12:     2       46.19            138.55
+13:
+14:
+15:
+16:
+17:ADV POL/RES
+18:ADV CANCELLATION POL/FEE
+19:RQSTD TO HAVE SUBURBAN//NOT GUARANTEED
+20:
+21:                               CLIENT, GUI
+22:
+23:
+24:
+25:    PH  12/16/10 15:29 JDCARPI       78362  R3248633
+26:
+27:
+28:
+29:
+30:
+31:
+32:
+99:BATCH NO:  78362 TO    EGE COMPLETE AT 12/16/10 15:40:51   5
+
+00:DOLLAR TO    JAC 12/16/10 15:41:11 - BATCH NO:  78363
+SSSSSSSSSS
+01:R R3248124 JAC      JAC      01/25/11 1200 02/11/11 1100  ZR
+02:WISES/ROBERT
+03:                               (414) 225-3777
+04:                                                     N
+05:
+06:                                                   R3248124
+07:                               VI 4147180391037468     11/14
+08:                                                     USD
+09:MVAR  RXHW8   1 G                  2
+10:             0.29             375.00
+11:                                1050
+12:     3       20.83       50    62.50      150
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:
+21:                               CLIENT, GUI
+22:
+23:
+24:
+25:    PH  12/16/10 14:59 ABARKER       78363  R3248124
+26:
+27:
+28:
+29:
+30:
+31:
+32:
+99:BATCH NO:  78363 TO    JAC COMPLETE AT 12/16/10 15:41:11   1

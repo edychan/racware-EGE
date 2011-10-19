@@ -1,0 +1,250 @@
+
+RING
+
+CONNECT 1200
+
+MCII 06/17/97 20:16
+
+8804
+2016 06/17 01220121 ALLD8224
+
+00:     EGE B 6275       06171997 173328
+
+
+   LOCATION: EGE AT 06/17/1997 17:33:26 - Transmission No:   6275
+ CENTRAL_RESERVATION_SYSTEM_BLACKOUT_CONFIRMATION
+
+ CREATE NO PICKUP, OR RETURN FOR EGE ICAR
+ BY AIRLINE,WATS
+
+ FROM 08/02/97        TO 08/09/97
+
+ AUTHORIZED_BY ALAN LYBARGER
+
+ BLACKOUT_ENTERED_BY DBLR             06/17/97  EGE
+ CENTRAL_RESERVATION_SYSTEM_BLACKOUT_CONFIRMATION
+
+ CREATE NO PICKUP, OR RETURN FOR EGE IDAR
+ BY AIRLINE,WATS
+
+ FROM 08/02/97        TO 08/09/97
+
+ AUTHORIZED_BY ALAN LYBARGER
+
+ BLACKOUT_ENTERED_BY DBLR             06/17/97  EGE
+ CENTRAL_RESERVATION_SYSTEM_BLACKOUT_CONFIRMATION
+
+ CREATE NO PICKUP, OR RETURN FOR EGE SCAR
+ BY AIRLINE,WATS
+
+ FROM 08/02/97        TO 08/09/97
+
+ AUTHORIZED_BY ALAN LYBARGER
+
+ BLACKOUT_ENTERED_BY DBLR             06/17/97  EGE
+ CENTRAL_RESERVATION_SYSTEM_BLACKOUT_CONFIRMATION
+
+ CREATE NO PICKUP, OR RETURN FOR EGE SDAR
+ BY AIRLINE,WATS
+
+ FROM 08/02/97        TO 08/09/97
+
+ AUTHORIZED_BY ALAN LYBARGER
+
+ BLACKOUT_ENTERED_BY DBLR             06/17/97  EGE
+ CENTRAL_RESERVATION_SYSTEM_BLACKOUT_CONFIRMATION
+
+ CREATE NO PICKUP, OR RETURN FOR EGE FCAR
+ BY AIRLINE,WATS
+
+ FROM 08/02/97        TO 08/09/97
+
+ AUTHORIZED_BY ALAN LYBARGER
+
+ BLACKOUT_ENTERED_BY DBLR             06/17/97  EGE
+ CENTRAL_RESERVATION_SYSTEM_BLACKOUT_CONFIRMATION
+
+ CREATE NO PICKUP, OR RETURN FOR EGE FDAR
+ BY AIRLINE,WATS
+
+ FROM 08/02/97        TO 08/09/97
+
+ AUTHORIZED_BY ALAN LYBARGER
+
+ BLACKOUT_ENTERED_BY DBLR             06/17/97  EGE
+
+
+
+Transmission number   6275 to EGE complete at 17:33:27 on 06/17/1997
+Total transmitted: 6
+
+
+
+
+***************************************************************************
+
+00:     EGE R 6276       06171997 174319
+00:DOLLAR TO EGE 06/17/97 17:43:08 - BATCH NO:   6276
+01:C R8654100 EGE               07/26/97 1800 07/30/97 1345
+02:SCHUBERT/DENNIS
+03:
+04:                               UA/8422
+05:
+06:
+07:                               AX 378783348281002      09 98
+08:                                                   USD
+09:ICAR  VALUE   1 G                                    4
+10:             0.35             308.99             66.99    22.00
+11:                                1050               150
+12:             22.00             66.99      150
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:ROSENBLUTH TRAVEL AGCY IN      33619552
+21:SUITE 100                      COVIA_LOGN
+22:100 CORPORATE WOODS
+23:ROCHESTER            NY 14623      UNITED STATES
+24:
+25:    IL  06/17/97 07:57 COVIA_LOG      6276  R8654100
+26:
+27:
+28:
+29:
+30:
+01:R R8669294 EGE               06/25/97 1300 06/28/97 1300
+02:PETER/DALEF
+03:
+04:
+05:
+06:
+07:                               AX 378208562471006      12 98
+08:                                                   USD
+09:SFAR  VALUE   1 G                                    3
+10:             0.35             449.99             89.99    30.00
+11:                                1050               150
+12:             30.00             89.99      150
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:THE TRAVEL EXCHANGE INC        36529275
+21:SUITE 105                      AG-66
+22:4600 MONTGOMERY RD
+23:CINCINNATI           OH 45212      UNITED STATES
+24:
+25:    DP  06/17/97 09:24 PARS_LOGI      6276  R8669294
+26:
+27:
+28:
+29:
+30:
+01:R R8669591 EGE               11/20/97 1700 11/23/97 0700
+02:AKE/PATRICIA
+03:
+04:                               US/4148
+05:
+06:
+07:                               VI 4356024102853548     11 99
+08:                                                   USD
+09:XFAR  VALUE   1 G                                    3
+10:                              389.99             77.99    26.00
+11:
+12:             26.00             77.99
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:TRIP AND TRAVEL INC            36898901
+21:4347 W TUSCARAWAS STREET       UAZIC4DD
+22:
+23:CANTON               OH 44708      UNITED STATES
+24:
+25:    IL  06/17/97 09:35 COVIA_LOG      6276  R8669591
+26:
+27:
+28:
+29:
+30:
+01:R R8670060 EGE               03/07/98 1214 03/13/98 1200
+02:TIBBALS/PHIL/G
+03:
+04:                               AA/2263
+05:
+06:
+07:                               VI 4128003269948546     07 98
+08:                                                   USD
+09:MVAR  VALUE   1 Q                  1
+10:                              399.99             99.99    33.33
+11:
+12:             30.00             89.99
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:JOURNEYCORP                    31614892
+21:1001 FRONTIER ROAD             SABRE_LOGN
+22:
+23:BRIDGEWATER          NJ 08807      UNITED STATES
+24:
+25:    DS  06/17/97 09:58 SABRE_LOG      6276  R8670060
+26:
+27:
+28:
+29:
+30:
+99:BATCH NO:   6276 TO EGE COMPLETE AT 17:43:10 061797   4
+
+***************************************************************************
+
+00:     EGE R 6277       06171997 183554
+00:DOLLAR TO EGE 06/17/97 18:35:50 - BATCH NO:   6277
+01:R R8672003 EGE               06/25/97 1100 06/29/97 1700
+02:KOHNEN/DAVID
+03:
+04:
+05:
+06:
+07:                               AX 372413145841008      12 98
+08:                                                   USD
+09:IDAR  VALUE   1 G                                    5
+10:             0.35             220.99             38.99    13.66
+11:                                1050               150
+12:             13.66             40.99      150
+13:
+14:
+15:
+16:
+17:ARR BY PRIVATE PLANE
+18:
+19:
+20:THE TRAVEL EXCHANGE INC        36529275
+21:SUITE 105                      AG-41
+22:4600 MONTGOMERY RD
+23:CINCINNATI           OH 45212      UNITED STATES
+24:
+25:    DP  06/17/97 11:04 PARS_LOGI      6277  R8672003
+26:
+27:
+28:
+29:
+30:
+99:BATCH NO:   6277 TO EGE COMPLETE AT 18:35:50 061797   1
+
+
+NNNN
+
+
++++

@@ -1,0 +1,47 @@
+
+RING
+
+CONNECT 1200
+
+MCII 12/21/99 14:24
+
+8707
+1424 12/21 04590897 PENT8766
+00:     EGE R 11843      12211999 121537
+00:DOLLAR TO EGE 12/21/99 12:15:34 - BATCH NO:  11843
+01:C Z2909098 EGE               12/22/99 1200 12/29/99 1200
+02:EICHHOLZ BENJAMIN
+03:
+04:
+05:
+06:
+07:                               AX 378263419298003      10 02
+08:                                                   USD
+09:MVAR  WKL31   1 G                  1
+10:                              849.00            159.00
+11:
+12:        1    53.00            159.00            159.00
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:SUMMIT CRUISE & TRAVEL         11529744
+21:7088 HODGSON MEMORIAL DR       AMDS_LOGN
+22:
+23:SAVANNAH             GA 31406      UNITED STATES
+24:
+25:    1A  12/21/99 12:13 ARINC_LOG     11843  Z2909098
+26:
+27:
+28:
+29:
+30:
+99:BATCH NO:  11843 TO EGE COMPLETE AT 12:15:34 122199   1
+
+NNNN
+
+
++++

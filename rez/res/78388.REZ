@@ -1,0 +1,171 @@
+
+00:DOLLAR TO    EGE 12/17/10 10:41:22 - BATCH NO:  78387
+SSSSSSSSSS
+01:R R3260734 EGE               01/19/11 1400 01/24/11 1200  ZR
+02:JAARDEMA/JASON
+03:
+04:
+05:
+06:                                                   OFBDOC
+07:                               CA 5287300010087697     11 15
+08:                                                     USD
+09:FFAR  WKL31   1 G                  1
+10:                              599.00             99.83    33.28
+11:
+12:             33.28             99.83
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:TRAVELOCITY.COM LP             45602981
+21:AMEX TRAVEL - ONLINE           SABRE_LOGN
+22:11603 CROSSWINDS WAY  STE 125
+23:SAN ANTONIO          TX 78233      UNITED STATES
+24:
+25:    DS  12/17/10 10:10 SABRE_LOG     78387  R3260734
+26:
+27:
+28:
+29:
+30:
+31:
+32:
+SSSSSSSSSS
+01:R R3260809 EGE               12/24/10 2000 12/31/10 1900  ZR
+02:WIZENBERG/ANATOL
+03:
+04:
+05:
+06:                                                   EOGSJR
+07:                               AX 372582255161009      10 14
+08:                                                     USD
+09:SFAR  WKL31   1 G                  1
+10:                              899.00            149.83    49.94
+11:
+12:             49.94            149.83
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:TRAVELOCITY.COM LP/TPN TRAVEL  45537284
+21:11603 CROSSWINDS WAY           SABRE_LOGN
+22:SUITE 125
+23:SAN ANTONIO          TX 78233      UNITED STATES
+24:
+25:    DS  12/17/10 10:15 SABRE_LOG     78387  R3260809
+26:
+27:
+28:
+29:
+30:
+31:
+32:
+SSSSSSSSSS
+01:R R3260904 EGE      EGE      01/07/11 1200 01/13/11 1200  ZR
+02:HALL/WELLS
+03:                               7049051001
+04:                                                     N
+05:
+06:                                                   16155000INTERNET
+07:                               VI 4800113251476805     02/11
+08:                                                     USD
+09:IFAR  WKL31   1 G                  1
+10:                              399.00
+11:
+12:             22.17             66.50
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:
+21:
+22:
+23:
+24:    dhall@helenadamsrealty.com
+25:    ZR  12/17/10 10:20 INET_LOGN     78387  R3260904
+26:
+27:
+28:
+29:
+30:
+31:
+32:
+99:BATCH NO:  78387 TO    EGE COMPLETE AT 12/17/10 10:41:22   3
+
+00:DOLLAR TO    JAC 12/17/10 10:41:23 - BATCH NO:  78388
+SSSSSSSSSS
+01:C R3250426 JAC               06/10/11 1300 06/18/11 1200  ZR
+02:HOSPES/VICTORIA
+03:
+04:
+05:
+06:                                                   MDQSMT
+07:                               AX 377299313401013      05 14
+08:                                                     USD
+09:PCAR  WKL31   1 G                  1
+10:             0.29             290.00             48.33    16.11
+11:                                 700
+12:     1       16.11       33    48.33      100
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:TRAVELOCITY.COM LP             45623955
+21:SUITE 125                      SABRE_LOGN
+22:11603 CROSSWINDS WAY
+23:SAN ANTONIO          TX 78233      UNITED STATES
+24:
+25:    DS  12/17/10 10:13 SABRE_LOG     78388  R3250426
+26:
+27:
+28:
+29:
+30:
+31:
+32:
+SSSSSSSSSS
+01:R R3260785 JAC               06/10/11 1300 06/18/11 1200  ZR
+02:HOSPES/VICTORIA
+03:
+04:
+05:
+06:                                                   MDQSMT
+07:                               BA 4793479330041434     11 11
+08:CHEP                                                 USD
+09:PCAR  LPW00   1 G                  1
+10:             0.29             275.50             45.91    15.30
+11:                                 700
+12:     1       15.30       33    45.91      100
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:TRAVELOCITY.COM LP/TPN TRAVEL  45537284
+21:11603 CROSSWINDS WAY           SABRE_LOGN
+22:SUITE 125
+23:SAN ANTONIO          TX 78233      UNITED STATES
+24:
+25:    DS  12/17/10 10:13 SABRE_LOG     78388  R3260785
+26:
+27:
+28:
+29:
+30:
+31:
+32:
+99:BATCH NO:  78388 TO    JAC COMPLETE AT 12/17/10 10:41:23   2

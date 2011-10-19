@@ -1,0 +1,48 @@
+
+RING
+
+CONNECT 1200
+
+MCII 12/23/99 17:34
+
+0808
+1734 12/23 04380244 PENT0866
+00:     EGE R 11859      12231999 140250
+00:DOLLAR TO EGE 12/23/99 14:02:47 - BATCH NO:  11859
+01:C Z1659209 EGE               12/25/99 1820 01/01/00 1230
+02:MENDITCH/FRANK
+03:
+04:
+05:
+06:
+07:                               AX 371380362772003      09 01
+08:                                                   USD
+09:FDAR  WKL31   1 G                  1
+10:                              334.00             84.00
+11:
+12:        1    28.00             84.00             84.00
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:AMERICAN EXPRESS TRAVEL        10858901
+21:1425-C SOUTHEAST 17TH ST       ARINC_LOGN
+22:
+23:FT LAUDERDALE        FL 33316      UNITED STATES
+24:
+25:    AA  12/23/99 13:15 ARINC_LOG     11859  Z1659209
+26:
+27:
+28:
+29:
+30:
+99:BATCH NO:  11859 TO EGE COMPLETE AT 14:02:47 122399   1
+
+
+NNNN
+
+
++++

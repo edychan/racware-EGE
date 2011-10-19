@@ -1,0 +1,49 @@
+
+RING
+
+CONNECT 1200
+
+MCII 04/09/99 21:13
+
+0607
+2113 04/09 01141327 ALLD8784
+
+00:     EGE R 10774      04091999 183827
+00:DOLLAR TO EGE 04/09/99 18:38:25 - BATCH NO:  10774
+01:R D8347927 EGE               12/19/99 1922 01/02/00 1000
+02:POPE/WILLIAM M/JR
+03:
+04:                               AA/2349
+05:
+06:
+07:                               AX 371389549291001      02 02
+08:                                                   USD
+09:FCAR  WKL31   1 Q                  2
+10:                              239.99             49.99
+11:
+12:        1    16.66             49.99             49.99
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:AMERICAN EXPRESS TRAVEL        03531500
+21:20022 NO 31ST AVE/S BLD 4TH FL SABRE_LOGN
+22:PO BOX 53846
+23:PHOENIX              AZ 85072      UNITED STATES
+24:
+25:    DS  04/09/99 11:43 SABRE_LOG     10774  D8347927
+26:AX1110
+27:
+28:
+29:
+30:
+99:BATCH NO:  10774 TO EGE COMPLETE AT 18:38:26 040999   1
+
+
+NNNN
+
+
++++

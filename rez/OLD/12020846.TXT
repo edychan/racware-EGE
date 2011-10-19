@@ -1,0 +1,48 @@
+
+RING
+
+CONNECT 1200
+
+MCII 12/02/99 13:00
+
+9723
+1300 12/02 04521068 PENT9745
+00:     EGE R 11638      12021999 090255
+00:DOLLAR TO EGE 12/02/99 09:02:50 - BATCH NO:  11638
+01:R Z2614214 EGE               12/04/99 1100 12/08/99 1300
+02:BOISSELLE/ANDREW
+03:                               (516) 296-9483
+04:                                 /UNKWN
+05:
+06:
+07:                               VI 4492270000595187     10/01
+08:                                                   USD
+09:FCAR  DLY00   1 G                                    4        2
+10:                                                 33.00    11.00
+11:
+12:             11.00             33.00
+13:
+14:
+15:
+16:
+17:   ADV OF FEES AND RESTR AND CC AVAIL
+18:ADV OF EXTRA HOUR AND CANC POL
+19:
+20:
+21:                               CLIENT
+22:
+23:
+24:
+25:    PH  12/01/99 11:34 TSCG          11638  Z2614214
+26:
+27:
+28:
+29:
+30:
+99:BATCH NO:  11638 TO EGE COMPLETE AT 09:02:51 120299   1
+
+
+NNNN
+
+
++++

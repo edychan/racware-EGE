@@ -1,0 +1,114 @@
+
+RING
+
+CONNECT 1200
+
+MCII 06/16/97 14:07
+
+7066
+1407 06/16 01140665 ALLD6411
+
+00:     EGE B 6269       06161997 103034
+
+
+   LOCATION: EGE AT 06/16/1997 10:30:29 - Transmission No:   6269
+ CENTRAL_RESERVATION_SYSTEM_BLACKOUT_CONFIRMATION
+
+ CREATE NO PICKUP, OR RETURN FOR EGE FFAR
+ BY AIRLINE,WATS
+
+ FROM 07/03/97        TO 07/06/97
+
+ AUTHORIZED_BY ALAN LYBARGER
+
+ BLACKOUT_ENTERED_BY DBLR             06/16/97  EGE
+ CENTRAL_RESERVATION_SYSTEM_BLACKOUT_CONFIRMATION
+
+ CREATE NO PICKUP, OR RETURN FOR EGE MVAR
+ BY AIRLINE,WATS
+
+ FROM 07/03/97        TO 07/06/97
+
+ AUTHORIZED_BY ALAN LYBARGER
+
+ BLACKOUT_ENTERED_BY DBLR             06/16/97  EGE
+
+
+
+Transmission number   6269 to EGE complete at 10:30:30 on 06/16/1997
+Total transmitted: 2
+
+
+
+
+***************************************************************************
+
+00:     EGE R 6270       06161997 120713
+00:DOLLAR TO EGE 06/16/97 12:07:07 - BATCH NO:   6270
+01:A R8620577 EGE               06/20/97 1200 06/27/97 1200
+02:HOLBROOK/PATRICIA/D
+03:                               (808) 874-1187 H
+04:                                 /WALK
+05:
+06:
+07:                               MC 5473232214161438     03/98
+08:                                       MP5330      USD
+09:ECAR  VALUE   1 G                  1
+10:             0.35             199.99             34.99    12.66
+11:                                1050               150
+12:             12.66             37.99      150
+13:
+14:
+15:
+16:
+17:ADV RATES AND RESTR
+18:
+19:
+20:
+21:                               CLIENT
+22:
+23:
+24:
+25:    PH  06/16/97 12:28 FMML           6270  R8620577
+26:
+27:
+28:
+29:
+30:
+01:C R8620577 EGE               06/20/97 1200 06/27/97 1200
+02:HOLBROOK/PATRICIA/D
+03:                               (808) 874-1187 H
+04:                                 /WALK
+05:
+06:
+07:                               MC 5473232214161438     03/98
+08:                                       MP5330      USD
+09:ECAR  VALUE   1 G                  1
+10:             0.35             199.99             34.99    12.66
+11:                                1050               150
+12:             12.66             37.99      150
+13:
+14:
+15:
+16:
+17:CANCEL PAT
+18:CHANGE OF PLNS
+19:
+20:
+21:                               CLIENT
+22:
+23:
+24:
+25:    PH  06/16/97 12:29 FMML           6270  R8620577
+26:
+27:
+28:
+29:
+30:
+99:BATCH NO:   6270 TO EGE COMPLETE AT 12:07:08 061697   2
+
+
+NNNN
+
+
++++

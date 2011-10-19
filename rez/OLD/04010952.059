@@ -1,0 +1,49 @@
+
+RING
+
+CONNECT 1200
+
+MCII 04/01/99 13:39
+
+3381
+1339 04/01 01121553 ALLD1563
+
+00:     EGE R 10762      04011999 110323
+00:DOLLAR TO EGE 04/01/99 11:03:20 - BATCH NO:  10762
+01:A D8174260 EGE               04/06/99 1200 04/08/99 1200
+02:MCCLELLAN/JOHN
+03:                               (615) 383-3038 H/B
+04:                               AA/2263
+05:
+06:
+07:                               MC 5458921100000713     09/00
+08:                                                   USD
+09:FCAR  SPD00   1 G                                    2
+10:                                                 38.00
+11:
+12:             12.67             38.00
+13:
+14:
+15:
+16:
+17:ADV POL/AA FRQ FLYER# 3040706--ADDED IATA# PER AGT.
+18:
+19:
+20:PARTHENON TRAVEL SERVICE INC   44618980
+21:ONE PARK PLAZA                 AG-AJJ
+22:
+23:NASHVILLE            TN 37202      UNITED STATES
+24:
+25:    PH  04/01/99 10:01 DBGL          10762  D8174260
+26:
+27:
+28:
+29:
+30:
+99:BATCH NO:  10762 TO EGE COMPLETE AT 11:03:22 040199   1
+
+
+NNNN
+
+
++++

@@ -1,0 +1,171 @@
+
+00:DOLLAR TO    EGE 12/16/10 13:40:09 - BATCH NO:  78359
+SSSSSSSSSS
+01:A R1851616 EGE      EGE      12/16/10 1700 12/21/10 1700  ZR
+02:CARVER/TIMOTHY
+03:
+04:                                                     N
+05:
+06:                                                   N279ME
+07:                               VI 4616081102821723     02 12
+08:                                                     USD
+09:EDAR  WK056   1 G                  1
+10:                              100.00
+11:
+12:              6.67             20.00
+13:
+14:
+15:
+16:
+17:ADJ PU RET DATE&TIME//ADV NEW RATE//NEW TTL
+18:
+19:
+20:EXPEDIA INC/EXPEDIA.COM        11617270
+21:SUITE 107                      PARS_LOGN
+22:6 W DRUID HILLS DR NE
+23:ATLANTA              GA 30329      UNITED STATES
+24:
+25:    PH  12/16/10 13:32 CVIRAY        78359  R1851616
+26:
+27:
+28:
+29:
+30:
+31:
+32:
+99:BATCH NO:  78359 TO    EGE COMPLETE AT 12/16/10 13:40:09   1
+
+00:DOLLAR TO    EGE 12/16/10 13:41:00 - BATCH NO:  78360
+SSSSSSSSSS
+01:C R3245546 EGE               12/20/10 1145 12/23/10 1100  ZR
+02:CALDWELL/PHILLIP
+03:
+04:
+05:
+06:                                                   N3TS2X
+07:                               VI 4820927420801056     03 12
+08:                                                     USD
+09:CCAR  PD034   1 G                                    3
+10:                                                 35.00    11.67
+11:
+12:             11.67             35.00
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:AAA TUSCARAWAS COUNTY          36943900
+21:1112 FOURTH ST NW              COVIA_LOGN
+22:
+23:NEW PHILADELPHIA     OH 44663      UNITED STATES
+24:
+25:    IL  12/16/10 12:47 COVIA_LOG     78360  R3245546
+26:
+27:
+28:
+29:
+30:
+31:
+32:
+SSSSSSSSSS
+01:R R3245737 EGE               12/20/10 1145 12/23/10 1100  ZR
+02:BARNES/ROBERT
+03:
+04:
+05:
+06:                                                   N3TS2X
+07:                               VI 4820927420801056     03 12
+08:                                                     USD
+09:CCAR  PD034   1 G                                    3
+10:                                                 35.00    11.67
+11:
+12:             11.67             35.00
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:AAA TUSCARAWAS COUNTY          36943900
+21:1112 FOURTH ST NW              COVIA_LOGN
+22:
+23:NEW PHILADELPHIA     OH 44663      UNITED STATES
+24:
+25:    IL  12/16/10 12:48 COVIA_LOG     78360  R3245737
+26:
+27:
+28:
+29:
+30:
+31:
+32:
+SSSSSSSSSS
+01:R R3245948 EGE      EGE      01/01/11 1200 01/08/11 1200  ZR
+02:ESPINOSA ROSALES/FRANCISCO
+03:                               0525552474097
+04:                               CO/CO1025             N
+05:
+06:                                                   16011706INTERNET
+07:                               AX 376668878013002      07/12
+08:                                                     USD
+09:XXAR  WKL31   1 G                  1
+10:             0.29             149.00
+11:                                 500
+12:             10.00       24    29.00       72
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:
+21:
+22:
+23:
+24:    espinosa_francisco@yahoo.com.mx
+25:    ZR  12/16/10 13:01 INET_LOGN     78360  R3245948
+26:
+27:
+28:
+29:
+30:
+31:
+32:CO FR315258
+SSSSSSSSSS
+01:R R3246076 EGE      EGE      01/04/11 1200 01/14/11 1200  ZR
+02:TAROFF/SCOTT
+03:                               9083108906
+04:                               CO/1804               N
+05:
+06:                                                   16013563INTERNET
+07:                               VI 4636676008913890     11/11
+08:                                                     USD
+09:IVAR  WK916   1 G                  1
+10:                              474.05
+11:
+12:     3       26.33             79.01
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:
+21:
+22:
+23:
+24:    staroff@oilmatic.com
+25:    ZR  12/16/10 13:07 INET_LOGN     78360  R3246076
+26:
+27:
+28:
+29:
+30:
+31:
+32:CO sx422807
+99:BATCH NO:  78360 TO    EGE COMPLETE AT 12/16/10 13:41:00   4

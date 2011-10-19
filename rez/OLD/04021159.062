@@ -1,0 +1,49 @@
+
+RING
+
+CONNECT 1200
+
+MCII 04/02/99 17:09
+
+4517
+1709 04/02 01152637 ALLD2699
+
+00:     EGE R 10765      04021999 160046
+00:DOLLAR TO EGE 04/02/99 16:00:42 - BATCH NO:  10765
+01:R D8230374 EGE               04/03/99 1715 04/09/99 1300
+02:WILLIAMS/BRENT/D
+03:
+04:                               AA/2305
+05:
+06:
+07:                               AX 372824690203008      07 01
+08:WPS16                                              USD
+09:SFAR  WPS16   1 G                  1
+10:                              275.00             59.00
+11:
+12:        1    19.67             59.00             59.00
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:GLOBAL TRAVEL SERVICE          15670115
+21:514 SOUTH BALDWIN AVENUE       SABRE_LOGN
+22:
+23:MARION               IN 46953      UNITED STATES
+24:
+25:    DS  04/02/99 15:53 SABRE_LOG     10765  D8230374
+26:
+27:
+28:
+29:
+30:
+99:BATCH NO:  10765 TO EGE COMPLETE AT 16:00:42 040299   1
+
+
+NNNN
+
+
++++

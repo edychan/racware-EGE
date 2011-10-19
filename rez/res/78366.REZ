@@ -1,0 +1,72 @@
+
+00:DOLLAR TO    EGE 12/16/10 17:40:56 - BATCH NO:  78365
+SSSSSSSSSS
+01:R R3250205 EGE               02/26/11 1230 03/03/11 0630  ZR
+02:CARLSON/DANA
+03:                               6166824811
+04:
+05:
+06:                                                   650915314INTERNET
+07:                               VI 4388523018597216     03/13
+08:                                                     USD
+09:IVAR  WKL31   1 G                  1
+10:                              399.00
+11:
+12:             22.17             66.50
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:CAR RENTALS.COM                10004871
+21:111 TOWN SQUARE PLACE STE 1205 AG-
+22:
+23:JERSEY CITY          NJ 07310      UNITED STATES
+24:
+25:    7O  12/16/10 17:03 RNTL_LOGN     78365  R3250205
+26:
+27:
+28:
+29:
+30:
+31:
+32:
+99:BATCH NO:  78365 TO    EGE COMPLETE AT 12/16/10 17:40:56   1
+
+00:DOLLAR TO    JAC 12/16/10 17:40:59 - BATCH NO:  78366
+SSSSSSSSSS
+01:R R3250426 JAC               06/10/11 1300 06/18/11 1200  ZR
+02:HOSPES/VICTORIA
+03:
+04:
+05:
+06:                                                   MDQSMT
+07:                               AX 377299313401013      05 14
+08:                                                     USD
+09:PCAR  WKL31   1 G                  1
+10:             0.29             290.00             48.33    16.11
+11:                                 700
+12:     1       16.11       33    48.33      100
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:TRAVELOCITY.COM LP             45623955
+21:SUITE 125                      SABRE_LOGN
+22:11603 CROSSWINDS WAY
+23:SAN ANTONIO          TX 78233      UNITED STATES
+24:
+25:    DS  12/16/10 17:22 SABRE_LOG     78366  R3250426
+26:
+27:
+28:
+29:
+30:
+31:
+32:
+99:BATCH NO:  78366 TO    JAC COMPLETE AT 12/16/10 17:40:59   1

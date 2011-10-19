@@ -1,0 +1,283 @@
+
+RING
+
+NO CARRIER
+
+RING
+
+CONNECT 1200
+
+MCII 06/17/97 00:56
+
+7852
+0056 06/17 01164645 ALLD7025
+
+00:     EGE R 6271       06161997 173333
+00:DOLLAR TO EGE 06/16/97 17:33:27 - BATCH NO:   6271
+01:R R8647598 EGE               06/28/97 1315 07/01/97 1315
+02:MOORE/ANNE
+03:                               (540) 951-8000 AGEN
+04:                               UA/5681
+05:
+06:
+07:                               VI 4356024100982653     06/98
+08:                                                   USD
+09:ICAR  VALUE   1 G                                    3
+10:             0.35             220.99             38.99    13.66
+11:                                1050               150
+12:             13.66             40.99      150
+13:
+14:
+15:
+16:
+17:ADV  ALL REST
+18:
+19:
+20:UNIGLOBE TRAVELMASTERS INC     49895705
+21:401 S MAIN STREET              AG-LES
+22:P O BOX P
+23:BLACKSBURG           VA 24063      UNITED STATES
+24:
+25:    PH  06/16/97 08:11 DLSP           6271  R8647598
+26:
+27:
+28:
+29:
+30:
+01:R R8649450 EGE               08/16/97 1315 08/23/97 1345
+02:BOBBITT/KIMBERLY
+03:
+04:                               UA/5681
+05:
+06:
+07:                               DS 6011008301505548     02 98
+08:                                                   USD
+09:CCAR  VALUE   1 G                  1
+10:             0.35             279.99             62.99    21.00
+11:                                1050               150
+12:  1          21.00             62.99      150
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:PEGASUS TRAVEL INC             45891451
+21:5501 WEST ROSEDALE             SABRE_LOGN
+22:
+23:FORT WORTH           TX 76107      UNITED STATES
+24:
+25:    DS  06/16/97 09:40 SABRE_LOG      6271  R8649450
+26:
+27:
+28:
+29:
+30:
+01:A R8649450 EGE               08/16/97 1315 08/23/97 1345
+02:BOBBITT/KIMBERLY/LARRY
+03:
+04:                               UA/5681
+05:
+06:
+07:                               DS 6011008301505548     02 98
+08:                                                   USD
+09:CCAR  VALUE   1 G                  1
+10:             0.35             279.99             62.99    21.00
+11:                                1050               150
+12:  1          21.00             62.99      150
+13:
+14:
+15:
+16:
+17:AG-CDB
+18:
+19:
+20:PEGASUS TRAVEL INC             45891451
+21:5501 WEST ROSEDALE             AG-CDB
+22:
+23:FORT WORTH           TX 76107      UNITED STATES
+24:
+25:    AA  06/16/97 09:45 ARINC_LOG      6271  R8649450
+26:
+27:
+28:
+29:
+30:
+99:BATCH NO:   6271 TO EGE COMPLETE AT 17:33:28 061697   3
+
+***************************************************************************
+
+00:     EGE R 6272       06161997 183551
+00:DOLLAR TO EGE 06/16/97 18:35:49 - BATCH NO:   6272
+01:C R8354273 EGE               12/20/97 1230 12/28/97 0700
+02:HOPKINS/JUDY
+03:
+04:
+05:
+06:
+07:                               VI 4271382137727190     08 99
+08:                                                   USD
+09:MVAR  VALUE   1 Q                  1
+10:                              569.99            104.99    35.00
+11:
+12:     1       35.00            104.99
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:ALADDIN TRAVEL SERVICE INC     34519575
+21:485 SHEPHERD STREET            AG-55
+22:
+23:WINSTON SALEM        NC 27103      UNITED STATES
+24:
+25:    DP  06/16/97 11:29 ABCUS_LOG      6272  R8354273
+26:
+27:
+28:
+29:
+30:
+01:R R8652698 EGE               12/20/97 1216 12/28/97 0700
+02:HOPKINS/JUDY
+03:
+04:
+05:
+06:
+07:                               VI 4271382137727190     08 99
+08:                                                   USD
+09:XFAR  VALUE   1 Q                  1
+10:                              749.99            149.99    50.00
+11:
+12:     1       50.00            149.99
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:ALADDIN TRAVEL SERVICE INC     34519575
+21:485 SHEPHERD STREET            AG-55
+22:
+23:WINSTON SALEM        NC 27103      UNITED STATES
+24:
+25:    DP  06/16/97 11:28 ABCUS_LOG      6272  R8652698
+26:
+27:
+28:
+29:
+30:
+01:R R8652935 EGE               12/20/97 1130 01/03/98 1230
+02:DEWULF/BERNARD
+03:
+04:                               DL/215
+05:
+06:
+07:                               AX 372804878035000      09 98
+08:                                                   USD
+09:MVAR  VALUE   1 Q                  2
+10:                              569.99            104.99    35.00
+11:
+12:  1          35.00            104.99
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:THE ART OF TRAVEL INC          11689506
+21:SUITE 240                      SABRE_LOGN
+22:11660 ALPHARETTA HIGHWAY
+23:ROSWELL              GA 30076      UNITED STATES
+24:
+25:    DS  06/16/97 11:35 SABRE_LOG      6272  R8652935
+26:
+27:
+28:
+29:
+30:
+01:R R8654100 EGE               07/26/97 1800 07/30/97 1345
+02:SCHUBERT/DENNIS
+03:
+04:                               UA/8422
+05:
+06:
+07:                               AX 378783348281002      09 98
+08:                                                   USD
+09:ICAR  VALUE   1 G                                    4
+10:             0.35             308.99             66.99    22.00
+11:                                1050               150
+12:             22.00             66.99      150
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:ROSENBLUTH TRAVEL AGCY IN      33619552
+21:SUITE 100                      UAZDLLX72
+22:100 CORPORATE WOODS
+23:ROCHESTER            NY 14623      UNITED STATES
+24:
+25:    IL  06/16/97 12:16 COVIA_LOG      6272  R8654100
+26:
+27:
+28:
+29:
+30:
+99:BATCH NO:   6272 TO EGE COMPLETE AT 18:35:50 061697   4
+
+
+NNNN
+
+
+
+MCII 06/17/97 00:57
+
+7855
+0057 06/17 01164646 ALLD7116
+
+00:     EGE R 6273       06161997 193242
+00:DOLLAR TO EGE 06/16/97 19:32:41 - BATCH NO:   6273
+01:R R8658548 EGE               03/14/98 1200 03/21/98 1200
+02:MYER/LARRY
+03:                               (305) 935-5560 B
+04:                               UA/1853
+05:
+06:
+07:                               VI 4128002364487616     10/99
+08:                                                   USD
+09:SFAR  VALUE   1 Q                  1
+10:                              399.99             99.99    33.33
+11:
+12:             30.00             89.99
+13:
+14:
+15:
+16:
+17:ADV RESTRICTIONS & POLICIES.  ADV TO CALL BACK AFTER 9-20-97
+18:FOR GUARANTEED RATES.
+19:
+20:CARLSON WAGONLIT TRAVEL        10784631
+21:2850A NE 187TH ST              DANA
+22:
+23:N MIAMI BEACH        FL 33180      UNITED STATES
+24:
+25:    PH  06/16/97 14:32 DSMH           6273  R8658548
+26:
+27:
+28:
+29:
+30:
+99:BATCH NO:   6273 TO EGE COMPLETE AT 19:32:41 061697   1
+
+
+NNNN
+
+
++++

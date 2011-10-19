@@ -1,0 +1,50 @@
+
+RING
+
+CONNECT 1200
+
+MCII 06/17/97 15:51
+
+8470
+1551 06/17 01042338 ALLD7872
+
+00:     EGE R 6274       06171997 121042
+00:DOLLAR TO EGE 06/17/97 12:10:35 - BATCH NO:   6274
+01:C R8633353 EGE               06/23/97 1200 06/28/97 1200
+02:DEANE/ROXIE
+03:
+04:                               AA/819
+05:
+06:
+07:                               VI 4719025002848811     08 98
+08:                                                   USD
+09:CDAR  VALUE   1 G                  1
+10:             0.35             199.99             36.99    12.66
+11:                                1050               150
+12:             12.66             37.99      150
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:CARLSON WAGONLIT TRAVEL        06831624
+21:SUITE A                        COVIA_LOGN
+22:918 GRAND AVE
+23:GLENWOOD SPRINGS     CO 81601      UNITED STATES
+24:
+25:    IL  06/17/97 11:52 COVIA_LOG      6274  R8633353
+26:
+27:
+28:
+29:
+30:
+99:BATCH NO:   6274 TO EGE COMPLETE AT 12:10:36 061797   1
+
+
+NNNN
+
+
++++
+NO CARRIER
