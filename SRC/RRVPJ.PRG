@@ -136,7 +136,9 @@ f_use ("raagr")
 
 f_use ("ravm")
 * edc: 07/20 count vehicle that is in the specified location only ...
-if yloc <> "ALL"
+if yloc = "EGE"
+   set filter to trim(floc) $ "EGE;THY"      && 11.01.11: special case EGE + THY
+elseif yloc <> "ALL"
    set filter to floc = yloc
 else
   set filter to
@@ -307,7 +309,10 @@ f_popback ()
 x = 0
 f_use ("rares", 2)
 seek "O"
-if yloc <> 'ALL'
+if yloc = 'EGE'    && 11.01.11: special case 
+   ycond1='fdateout <= ydate2 .and. trim(floc) $ [EGE;THY]'
+   ycond2='fdatein <= ydate2 .and. trim(floc) $ [EGE;THY]'
+elseif yloc <> 'ALL'
    ycond1='fdateout <= ydate2 .and. floc = yloc'
    ycond2='fdatein <= ydate2 .and. frloc = yloc'
 else

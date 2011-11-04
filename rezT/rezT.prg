@@ -315,9 +315,10 @@ do while .not. eof()
         ? lstr
         * xstr = substr(lstr,8,5)
         xstr = substr(lstr,8,2)          && currently: carcode is 2 char long
-		l_fclass = ctype(xstr)
-        * l_fmlgchg = val(substr(lstr,45,10))                 && ???
-        * l_fmlgchg = if(l_fmlgchg>99, 0, l_fmlgchg)
+        l_fclass = ctype(xstr)
+        l_fmlgchg = val(substr(lstr,45,10))                 && default mileage charge= .29
+        l_fmlgchg = if(l_fmlgchg>0, l_fmlgchg, 0.29)
+        l_fmlgchg = if(l_fmlgchg>99, 0, l_fmlgchg)
      case lline = '12'
      case lline = '13'
      case lline = '14'
