@@ -13,12 +13,26 @@
 * 02.15.11: correct Eagle phone #
 * -----------
 * 06.21.11: add email report function
+* ---
+* 11.10.11: add THY (thrifty rac)
 * =====================================================================
 clear
 set delete on
 set excl off
 
-do makrez
+* -- 11.11.11: define global variable here...
+* -- rez logo
+gdlogo = [<td align='center'><b>Thank you for reserving your vehicle with Dollar Rent-a-Car</b><br> ] + ;
+         [<img src='http://eonsum.com/ege/dollar.gif' height='78' width='158'></td>]
+gtlogo = [<td align='center'><b>Thank you for reserving your vehicle with Thrifty Rent-a-Car</b><br> ] + ;
+         [<img src='http://eonsum.com/ege/thrifty.jpg' height='78' width='158'></td>]
+* -- ra logo
+glogo1 = [<td colspan='3'><img src='http://eonsum.com/ege/dollar.gif' height='78' width='158'></td>]
+glogo2 = [<td colspan='3'><img src='http://eonsum.com/ege/thrifty.jpg' height='78' width='158'></td>]
+
+* --
+
+do makrez                   
 
 do makagr
 
@@ -83,6 +97,8 @@ set device to screen
 
 * =====================================================================
 procedure makagr
+private yfil, yto, yfrom, ylocation, ylogo
+
 yfil = "ramsg.dbf"
 if .not. file (yfil)
    return
@@ -103,7 +119,7 @@ setprc (0,0)
 
 * -- write header
 yln = 0
-@yln, 0 say [to,from,location,customer,addcust,vehicle,rateinfo,return,racharge,payment]        
+@yln, 0 say [to,from,logo,location,customer,addcust,vehicle,rateinfo,return,racharge,payment]        
 yln = yln + 1
 
 select ra
@@ -111,20 +127,26 @@ do while .not. eof ()
 
    yto = alltrim(ra->femail)
 
-   if ra->floc = "EGE"
-      * yfrom = "dollarrentacar_ege@hotmail.com"
-      yfrom = "dollar.ege.manager@centurytel.net"
-   else
-      yfrom = "jacksonholedollar@bresnan.net"
-   endif
    * --location section
    if ra->floc = "EGE"
+      ylogo = glogo1      && dollar logo
+      yfrom = "dollar.ege.manager@centurytel.net"
       ylocation = "Dollar Rent a Car<br>" +;
                   "Eagle County Regional Airport<br>" +;
                   "216 Eldon Wilson Road<br>" +;
                   "Gypsum, CO 81637<br>" +;
                   "Phone: 970-524-7334<br>"
+   elseif ra->floc = "THY"
+      ylogo = glogo2      && thrifty logo
+      yfrom = "thriftycustomerservice@centurytel.net"
+      ylocation = "Thrifty Rent a Car<br>" +;
+                  "Eagle County Regional Airport<br>" +;
+                  "216 Eldon Wilson Road<br>" +;
+                  "Gypsum, CO 81637<br>" +;
+                  "Phone: 970-524-8304<br>"
    else
+      ylogo = glogo1      && dollar logo
+      yfrom = "jacksonholedollar@bresnan.net"
       ylocation = "Dollar Rent a Car<br>" +;
                   "345 WEST BROADWAY<br>" +;
                   "JACKSON HOLE, WYOMING<br>" +;
@@ -159,8 +181,8 @@ do while .not. eof ()
             if(ra->fhrchg>0,"hour: $"+str(ra->fhrchg,8,2)+"<br>","") +;
             "<br>" +;
             "State Tax<br>" +;
-            if(ra->floc="EGE","Airport Access 16%<br>","Airport Access <br>") +;
-            if(ra->floc="EGE","Colorado Road Safety $2 /day<br>","WY Surcharge 4% <br>")
+            if(trim(ra->floc)$"EGE;THY","Airport Access 16%<br>","Airport Access <br>") +;
+            if(trim(ra->floc)$"EGE;THY","Colorado Road Safety $2 /day<br>","WY Surcharge 4% <br>")
    * --return section
    yreturn = "RA #: "+trim(ra->floc)+str(ra->frano,6,0)+"<br>" +;
               "Due Back: "+if(empty(ra->fduein),dtoc(ra->fdatein),dtoc(ra->fduein))+"<br>" +;
@@ -197,6 +219,7 @@ do while .not. eof ()
 
    yfld = ["] + yto + ["] + [,] + ;
           ["] + yfrom + ["] + [,] + ;
+          ["] + ylogo + ["] + [,] + ;
           ["] + ylocation + ["] + [,] + ;
           ["] + ycust + ["] + [,] + ;
           ["] + yaddcust + ["] + [,] + ;
@@ -224,7 +247,7 @@ set device to screen
 
 * =====================================================================
 procedure makrez
-private yheader, ybody, yfooter
+private yheader, ybody, yfooter, ylogo, ycompany
 
 yfil = "rezmsg.dbf"
 if .not. file (yfil)
@@ -252,7 +275,9 @@ setprc (0,0)
 yln = 0
 * --12.30.10
 * @yln, 0 say [to,from,name,resno,cartype,dateout,datein,rate,surchg,surchg1,taxtot,estchg,filename]
-@yln, 0 say [to,from,rzheader,rzbody,rzfooter]        
+* @yln, 0 say [to,from,rzheader,rzbody,rzfooter]        
+* --
+@yln, 0 say [to,from,rzlogo,rzheader,rzbody,rzfooter]        && 11.11.11
 yln = yln + 1
 
 select rez
@@ -270,6 +295,8 @@ do while .not. eof ()
    select rez
    * --define from
    if upper(rez->ffile) = "EGE"
+      ycompany = "Dollar Rent A Car"
+      ylogo = gdlogo      && dollar logo
       yfrom = "dollar.ege.manager@centurytel.net"
       yloc = "Eagle County Airport Terminal or Eagle/ Vail Private Jet Center"
       yrloc = "Eagle County Regional Airport, 216 Eldon Wilson Rd, Gypsum, CO 81637"
@@ -278,7 +305,20 @@ do while .not. eof ()
       ystate = "COLORADO"
       yrestrict = "COLORADO"
 	  yuse = "For use within Colorado only."
+   elseif upper(rez->ffile) = "THY"
+      ycompany = "Thrifty Rent A Car"
+      ylogo = gtlogo      && thrifty logo
+      yfrom = "thriftycustomerservice@centurytel.net"
+      yloc = "Eagle County Airport Terminal or Eagle/ Vail Private Jet Center"
+      yrloc = "Eagle County Regional Airport, 216 Eldon Wilson Rd, Gypsum, CO 81637"
+      yphone = "970-524-8304 or thriftycustomerservice@centurytel.net"
+	  ycity = "EAGLE"
+      ystate = "COLORADO"
+      yrestrict = "COLORADO"
+	  yuse = "For use within Colorado only."
    else
+      ycompany = "Dollar Rent A Car"
+      ylogo = gdlogo      && dollar logo
       yfrom = "jacksonholedollar@bresnan.net"
       yloc = "345 West Broadway Jackson, WY (Airport Serving- Free shuttle) "
       yrloc = "345 West Broadway Jackson, WY (Airport Serving- Free shuttle) "
@@ -291,7 +331,7 @@ do while .not. eof ()
 
    * --detail
    if rez->fstatus = "N"
-      yheader = "<p align='center'><b>This e-mail is a receipt for your No Show/ Cancellation from Dollar Rent A Car.</b></p>" + ;
+      yheader = "<p align='center'><b>This e-mail is a receipt for your No Show/ Cancellation from " + ycompany + ".</b></p>" + ;
                 "<p align='center'><b>Reservation: " + alltrim(fname) + "." + "</b></p>" + ;
                 "<p align='center'<span><b>Here is your confirmation number : </b></span>" + ;
                 "<span style='color:#E61E14'><b>" + alltrim(fresvno) + "<br><br>" + ;
@@ -306,7 +346,7 @@ do while .not. eof ()
       ygreeting = ""
       yfine = ""
    elseif rez->fstatus = "C"
-      yheader = "<p align='center'><b>This e-mail is a receipt for your No Show/ Cancellation from Dollar Rent A Car.</b></p>" + ;
+      yheader = "<p align='center'><b>This e-mail is a receipt for your No Show/ Cancellation from " + ycompany + ".</b></p>" + ;
                 "<p align='center'><b>Reservation: " + alltrim(fname) + "." + "</b></p>" + ;
                 "<p align='center'<span><b>Here is your confirmation number : </b></span>" + ;
                 "<span style='color:#E61E14'><b>" + alltrim(fresvno) + "<br><br>" + ;
@@ -322,7 +362,7 @@ do while .not. eof ()
       yfine = ""
 
 				else
-      yheader = "<p align='center'><b>This e-mail is just a friendly reminder from your friends at Dollar Rent A Car.</b></p>" + ;
+      yheader = "<p align='center'><b>This e-mail is just a friendly reminder from your friends at " + ycompany + ".</b></p>" + ;
              "<p align='center'>We look forward to seeing you <b>" + alltrim(fname) + ".</b><br>" + ;
              "<b><span>Here is your confirmation number : </span><span style='font-size: 15.0pt;color:#E61E14'>" + ;
 			 alltrim(fresvno) + "</span></b></p>"
@@ -369,6 +409,7 @@ do while .not. eof ()
    select rez
    yfld = ["] + alltrim(femail) + ["] + [,] + ;
           ["] + yfrom + ["] + [,] + ;
+          ["] + ylogo + ["] + [,] + ;
           ["] + yheader + ["] + [,] + ;
           ["] + ybody + ["] + [,] + ;
           ["] + yfooter + ["] 
