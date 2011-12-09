@@ -59,6 +59,8 @@
 * Block out Deposit field if freesell is false
 * --
 * 09.14.11: elimate monthly rate
+* --
+* 11.22.11: set checkin location from open ra (frloc)
 * ===========================================================================
 store space (15) to yitem1, yitem2, yitem3, yitem4, yitem5, yitem6   && 10.15.08
 set century on     && 07.09.99
@@ -463,7 +465,9 @@ if xnew
       f_popup ("Press Any Key to Continue...", .t.)
       f_restbox (yscn)
    endif
-   l_frloc = gloc
+
+   * -- 11.22.11: checkin location = open ra
+   * l_frloc = gloc
 
    * -- 10.20.08: schedule return date
    * l_fduein = l_fdatein   

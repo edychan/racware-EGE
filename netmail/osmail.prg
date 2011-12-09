@@ -24,7 +24,7 @@ set excl off
 * -- rez logo
 gdlogo = [<td align='center'><b>Thank you for reserving your vehicle with Dollar Rent-a-Car</b><br> ] + ;
          [<img src='http://eonsum.com/ege/dollar.gif' height='78' width='158'></td>]
-gtlogo = [<td align='center'><b>Thank you for reserving your vehicle with Thrifty Rent-a-Car</b><br> ] + ;
+gtlogo = [<td align='center'><b>Thank you for reserving your vehicle with Thrifty Car Rental</b><br> ] + ;
          [<img src='http://eonsum.com/ege/thrifty.jpg' height='78' width='158'></td>]
 * -- ra logo
 glogo1 = [<td colspan='3'><img src='http://eonsum.com/ege/dollar.gif' height='78' width='158'></td>]
@@ -139,7 +139,7 @@ do while .not. eof ()
    elseif ra->floc = "THY"
       ylogo = glogo2      && thrifty logo
       yfrom = "thriftycustomerservice@centurytel.net"
-      ylocation = "Thrifty Rent a Car<br>" +;
+      ylocation = "Thrifty Car Rental<br>" +;
                   "Eagle County Regional Airport<br>" +;
                   "216 Eldon Wilson Road<br>" +;
                   "Gypsum, CO 81637<br>" +;
@@ -306,7 +306,7 @@ do while .not. eof ()
       yrestrict = "COLORADO"
 	  yuse = "For use within Colorado only."
    elseif upper(rez->ffile) = "THY"
-      ycompany = "Thrifty Rent A Car"
+      ycompany = "Thrifty Car Rental"
       ylogo = gtlogo      && thrifty logo
       yfrom = "thriftycustomerservice@centurytel.net"
       yloc = "Eagle County Airport Terminal or Eagle/ Vail Private Jet Center"

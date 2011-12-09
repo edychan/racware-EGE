@@ -23,6 +23,8 @@
 * 05.06.10: mgmt_7: change commission % for CDW, RCP & Travel guide
 * --
 * 06.01.11: mgmt_7: ra prefix=1 => 1 and 2 combined totals
+* --
+* 12.06.11: mgmt_7: ra prefix=6 => THY (thrifty)
 * ===========================================================================
 private yret, yfile, i, yfld, ytitle, ycond, yopt, yfilter
 
@@ -1551,8 +1553,9 @@ yseq = 0            && 11.13.09: ra filter default is ALL
 *   f_valid (empty(yxxx).or.yxxx=[BILL].or.yxxx=[QR],"Please enter [BILL] or [QR]")    && 10.30.06  
 * -- 11.13.09
 
+* --12.06.11: add THY (i.e. RA prefix = 6)
 @ 10, 03 say "RA Prefix...... " get yseq pict "9" valid ;
-  f_valid (yseq >=0 .and. yseq <= 3, "Please enter 0, 1, 2 or 3")
+  f_valid ((yseq >=0 .and. yseq <= 3) .or. yseq = 6, "Please enter 0, 1, 2, 3 or 6")
 * --
 @ 11, 03 say "Detail [Y/N]... " get ydetail pict "!" valid f_valid (ydetail $ "YN")
 if f_rd () = 27

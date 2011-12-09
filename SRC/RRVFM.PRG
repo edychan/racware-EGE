@@ -1916,6 +1916,7 @@ private yydays
 
 * initialize variables
 l_fdly = 0
+l_fwk = 0
 l_fwkd = 0
 l_fwkdtot = 0
 l_fdlytot = 0
@@ -1944,6 +1945,12 @@ l_fpaidays = ydaychg
 * --08.21.11: USE extra day rate from dollar res if available if rental days > 7 days
 l_fwktot = 0
 l_fdlytot = 0
+* --12.08.11: bug fix
+if (l_fhr * l_fhrchg) >= l_fdlychg .and. l_fdlychg > 0
+   l_fdly = l_fdly + 1
+   l_fhr = 0
+endif
+* --
 l_fhrtot = 0
 if l_fdly > 4 .and. l_fwkchg > 0                           && monthly rate not include in the estimate ...
    ydlychg = if(l_fxdlychg > 0, l_fxdlychg, l_fdlychg)     && use extra daily rate if available
@@ -2078,7 +2085,7 @@ do while .t.
          * 08.22.11: send extra day rate if available
 		 ydlychg = if(l_fxdlychg > 0, l_fxdlychg, l_fdlychg)
          do case
-         case ydays > 4 .and. l_fwkchg > 0
+         case ydays >= 4 .and. l_fwkchg > 0
 		    if l_fwkmlg > 0 .or. l_fdlymlg > 0
                yrate = [$ ] + alltrim(str(ydlychg,8,2)) + [ per day. ] + ;
 					   [$ ] + alltrim(str(l_fwkchg,8,2)) + [ per week. ] + ;
@@ -2132,7 +2139,7 @@ do while .t.
          replace fdatein with dtoc(l_fdatein)+" "+l_ftimein
          replace fsurchg with l_fsurchg, fsurchg1 with l_fsurchg1
          replace ftaxtot with l_ftaxtot, ftotal with yestchg
-         replace ffile with if(l_floc='EGE',"ege.htm","jac.htm")
+         replace ffile with l_floc       && 11.11.11: add thrifty (THY)
          * 12.30.10
          replace fstatus with ystatus, fcxldate with dtoc(l_fcxldate)
          replace freschg with l_freschg, fccinfo with yfld

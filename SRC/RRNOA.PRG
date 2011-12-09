@@ -86,6 +86,10 @@
 *   3. calculate estimate (e.g. 9 days = 1 wk + 2 extra days; not 2 reg days)
 * 09.14.11: elimate monthly rate and change the rate display order
 *  (i.e. daily, extra day, weekly, extended)
+* --
+* 11.30.11: display upsell rate table for both dollar & thrifty
+* --
+* 12.06.11: (rrnoah1): special case for EGE & THY to pick vehicle
 * ===========================================================================
 f_clrscn ("Open Rental Agreement")
 f_popup ("Please Wait...")
@@ -478,7 +482,9 @@ private yfactor, ystr, yrcode, ypos
 
    f_use ("rartm")
    select rartm
-   set filter to fcode = [VALUE] .and. floc = l_floc .and. ;
+   * -- 11.30.11: Need to include THY (thrifty) also
+   * set filter to fcode = [VALUE] .and. floc = l_floc .and. ;
+   set filter to fcode = [VALUE] .and. empty(floc) .and. ;
                  fdatefrom = l_fdateout .and. ;
                  fdlychg * yfactor > l_fdlychg .and. ;
                  fclass $ ystr .and. fclass <> l_fclass
@@ -688,18 +694,39 @@ case yvar = "L_FUNIT"      && pick vehicle by specifying class
    if .not. f_getfld (@ystr, 12, 72, "W/N", 4, "!!!!")
       f_restbox (yscn)
    else
-      f_restbox (yscn)
-      f_use ("ravm", 3)
-      seek "A" + l_floc + ystr
-      if f_valid (found (), "No " + alltrim (ystr) + ;
+      * -- 12.0.11: special case: for EGE & THY only
+      if trim(l_floc) $ "EGE;THY" 
+         f_restbox (yscn)
+         f_use ("ravm", 3)
+         set filter to trim(floc) $ "EGE;THY" .and. FCLASS = ystr
+         seek "A" 
+         if f_valid (found (), "No " + alltrim (ystr) + ;
             " size vehicles are available!")
-         * 12.15.10: take out class and increase description
-         if f_pick_f (11, 05, "", "Unit No.ÄÄÄYrÄColorÄÄÄÄÄÄModelÄÄÄÄÄÄ" ;
+            * 12.15.10: take out class and increase description
+            if f_pick_f (11, 05, "", "Unit No.ÄÄÄYrÄColorÄÄÄÄÄÄModelÄÄÄÄÄÄ" ;
+               + "DescÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄStallÄMiles", "funit+[ ]+fyear+" + ;
+               "[ ]+fcolor+[ ]+fmodel+[ ]+substr(fdesc,1,20)+[ ]+fstall+ " + ;
+               "[ ]+str (fmileage, 6)", "",    ;
+               "fstatus + floc + fclass", "[A]")
+               l_funit = ravm->funit
+            endif
+         endif
+         select ravm
+         set filter to
+      else
+         f_restbox (yscn)
+         f_use ("ravm", 3)
+         seek "A" + l_floc + ystr
+         if f_valid (found (), "No " + alltrim (ystr) + ;
+            " size vehicles are available!")
+            * 12.15.10: take out class and increase description
+            if f_pick_f (11, 05, "", "Unit No.ÄÄÄYrÄColorÄÄÄÄÄÄModelÄÄÄÄÄÄ" ;
                + "DescÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄStallÄMiles", "funit+[ ]+fyear+" + ;
                "[ ]+fcolor+[ ]+fmodel+[ ]+substr(fdesc,1,20)+[ ]+fstall+ " + ;
                "[ ]+str (fmileage, 6)", "",    ;
                "fstatus + floc + fclass", "[A" + l_floc + ystr + "]")
-            l_funit = ravm->funit
+               l_funit = ravm->funit
+            endif
          endif
       endif
    endif
@@ -2806,7 +2833,7 @@ else
    l_fmthtot = 0.00
 endif
 
-if l_fxdlychg > 0.00 .and. yrdays > 7    && 09.29.11: extra day rate only apply to rental > 7days
+if l_fxdlychg > 0.00 .and. yfdays > 7    && 09.29.11: extra day rate only apply to rental > 7days
    l_fxdlytot = l_fxdlychg * l_fdly
 elseif l_fdlychg > 0.00
    l_fdlytot = l_fdlychg * l_fdly   
